@@ -1,0 +1,47 @@
+[
+    {
+        "Section": "5",
+        "Trade": "cosmetics",
+        "Traders": "15",
+        "Sales_Per_Day": "15000000",
+        "Taxes": "yes",
+        "Union": "no",
+        "time_of_commencemeent": "string"
+    },
+    {
+        "Section": "4",
+        "Trade": "clothes",
+        "Traders": "15",
+        "Sales_Per_Day": "15000000",
+        "Taxes": "yes",
+        "Union": "no",
+        "time_of_commencemeent": "string"
+    },
+    {
+        "Section": "1",
+        "Trade": "fruit",
+        "Traders": "15",
+        "Sales_Per_Day": "15000000",
+        "Taxes": "yes",
+        "Union": "no",
+        "time_of_commencemeent": "string"
+    },
+    {
+        "Section": "10",
+        "Trade": "groceries",
+        "Traders": "15",
+        "Sales_Per_Day": "15000000",
+        "Taxes": "yes",
+        "Union": "no",
+        "time_of_commencemeent": "string"
+    },
+    {
+        "Section": "8",
+        "Trade": "cows",
+        "Traders": "33",
+        "Sales_Per_Day": "11111111111",
+        "Taxes": "no",
+        "Union": "yes",
+        "time_of_commencemeent": "string"
+    }
+]
