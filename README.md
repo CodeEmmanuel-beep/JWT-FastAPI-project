@@ -47,8 +47,19 @@ Access the documentation at:
 
  Authentication
 
-This API uses JWT-based authentication.
-Each user type (User, Developer, Mathematician) has unique access privileges.
+Task Route Requires standard user registration with:
+
+username
+
+password (hashed with Argon2)
+
+nationality
+
+Market Route Restricted to developers. Access granted only via a unique developer code, securely hashed with Argon2 — no password required.
+
+Calculations Route Reserved for mathematicians. Requires a unique mathematician secret, also hashed with Argon2 for secure validation.
+
+All credentials are validated through JWT tokens and securely stored using Argon2 hashing, ensuring robust protection across all access levels.
 
 Register and login through the relevant endpoints (/Auth, /Market Authentification, /Mathematician Auth).
 
