@@ -34,7 +34,7 @@ def register(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="you can not tell the same secret twice",
             )
-        hashed_secret = get_hashed_secret(mathematician_secret)
+    hashed_secret = get_hashed_secret(mathematician_secret)
     new_mathematician = Calculate(
         mathematician=mathematician, mathematician_secret=hashed_secret
     )
@@ -55,7 +55,7 @@ def login(
             status_code=403, detail="access denied, you do not know the secret"
         )
     calc = db.query(Calculate).filter(Calculate.mathematician == mathematician).first()
-    if not calc or verify_secret(mathematician_secret, calc.mathematician_secret):
+    if not calc or not verify_secret(mathematician_secret, calc.mathematician_secret):
         raise HTTPException(status_code=403, detail="access denied, invalid entry")
     token_expires = timedelta(minutes=60)
     create_access = create_access_token(

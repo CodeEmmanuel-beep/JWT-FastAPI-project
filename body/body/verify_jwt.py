@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import Security, status, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
-from body.models import Description, Post
+from body.models import Description, Post, plain, secret, dev, dev_n
 from dotenv import load_dotenv
 import os
 
@@ -93,3 +93,38 @@ def enrich_input(
         )
     except JWTError:
         return credentials_exception
+
+
+def add_post(
+    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
+    data: plain = Depends(),
+) -> secret:
+    try:
+        payload = jwt.decode(
+            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+        )
+        return secret(
+            username=data.username,
+            mathematician=payload.get("sub"),
+        )
+    except JWTError:
+        return HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="could not validate"
+        )
+
+
+def augument(
+    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
+    data: dev = Depends(),
+) -> dev_n:
+    try:
+        payload = jwt.decode(
+            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+        )
+        return dev_n(
+            developer_code=data.developer_code, developer_name=payload.get("sub")
+        )
+    except JWTError:
+        return HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="could not validate"
+        )

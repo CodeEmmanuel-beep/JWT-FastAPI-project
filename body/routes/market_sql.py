@@ -6,7 +6,8 @@ from fastapi import APIRouter
 from fastapi import HTTPException, Depends
 import logging
 from pathlib import Path
-from body.body.verify_jwt import verify_developer
+from body.body.verify_jwt import verify_developer, augument
+from body.models import dev_n
 
 router = APIRouter(prefix="/Market Sections_sql", tags=["Contract"])
 LOGFILE = Path("market.log")
@@ -51,20 +52,19 @@ def dev(
     sales: float,
     taxes: str,
     union: str,
-    developer_code: int,
-    developer_name,
+    data: dev_n = Depends(augument),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_developer),
 ):
     mark = Market(
-        developer_code=developer_code,
-        developer_name=developer_name,
         section=section,
         trade=trade,
         traders=traders,
         sales_per_day=sales,
         taxes=taxes,
         union=union,
+        developer_name=data.developer_name,
+        developer_code=data.developer_code,
     )
     logging.info("Section Name %s", section)
     logging.info("Trade Type %s", mark.trade)

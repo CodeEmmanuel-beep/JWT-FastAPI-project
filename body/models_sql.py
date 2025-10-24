@@ -14,7 +14,7 @@ class Task(Base):
     password = Column(String)
     description = Column(String)
     complete = Column(Boolean, default=False)
-    nationality = Column(String, default="Australian")
+    nationality = Column(String)
     time_of_execution = Column(DateTime, default=current_utc_time)
 
 
@@ -29,7 +29,6 @@ class Market(Base):
     sales_per_day = Column(Float)
     taxes = Column(String)
     union = Column(String)
-    nationality = Column(String, default="Nigerian")
 
 
 class Calculate(Base):
@@ -41,5 +40,4 @@ class Calculate(Base):
     operation = Column(String)
     numbers = Column(String)
     result = Column(Float)
-    nationality = Column(String, default="American")
     time_of_calculation = Column(DateTime, default=current_utc_time)

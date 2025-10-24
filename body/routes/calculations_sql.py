@@ -8,7 +8,8 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
-from body.body.verify_jwt import verify_mathematician
+from body.body.verify_jwt import verify_mathematician, add_post
+from body.models import secret
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
 LOGFILE = Path("calculations.log")
@@ -27,17 +28,18 @@ def secure(payload: dict = Depends(verify_mathematician)):
 
 @router.post("/calculate")
 def mathing(
-    username: str,
     numbers: str,
     operation: str,
     result: float | None = None,
+    data: secret = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
-        username=username,
+        username=data.username,
         numbers=numbers,
         operation=operation,
+        mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
 

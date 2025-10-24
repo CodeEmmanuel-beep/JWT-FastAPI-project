@@ -64,3 +64,12 @@
 2025-10-23 19:08:09,369 INFO calculation done divide, result0.8333333333333334 
 2025-10-23 19:10:27,822 INFO deleted tasks 1
 2025-10-23 19:17:10,053 INFO deleted tasks 2
+2025-10-24 11:37:59,380 INFO calculation done times, result40.0 
+2025-10-24 11:38:10,783 INFO calculation done divide, result0.625 
+2025-10-24 12:29:20,343 INFO calculation done divide, result0.8333333333333334 
+2025-10-24 12:56:33,578 INFO Section Name 6
+2025-10-24 12:56:33,578 INFO Trade Type cow tail
+2025-10-24 12:56:33,579 INFO Number of Traders 15
+2025-10-24 12:56:33,579 INFO Sales Per Day 300000.0
+2025-10-24 12:56:33,579 INFO Taxes Applied yes
+2025-10-24 12:56:33,579 INFO Union Name no

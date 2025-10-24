@@ -24,8 +24,6 @@ def register(
     if user_exists:
         raise HTTPException(status_code=400, detail="user already exists")
     password = str(password)
-    print("pass", password, type(password))
-    print("length", len(str(password).encode("utf-8")))
     hashed_password = hash_password(password)
     new_user = Task(
         username=username, password=hashed_password, nationality=nationality
