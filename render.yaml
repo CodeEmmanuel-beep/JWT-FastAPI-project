@@ -1,8 +1,6 @@
 services:
   - type: web
-    name: jwt-fastapi-app
+    name: fastapi-app
     env: python
-    pythonVersion: 3.11
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn body.main:app --host 0.0.0.0 --port $PORT
-
+    startCommand: uvicorn body.main:app --host 0.0.0.0 --port 10000
