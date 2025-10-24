@@ -1,7 +1,6 @@
 from body.routes import tasks_sql, calculations_sql, market_sql
 from body.routes import task_auth, market_auth, Calculation_auth
 
-print("auth_sql imported")
 
 from fastapi import FastAPI
 import os
