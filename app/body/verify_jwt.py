@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import Security, status, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
-from app.models import Description, Post, plain, secret, dev, dev_n
+from app.models import Description, Post, CalculateResponse, secret, dev, dev_n
 from dotenv import load_dotenv
 import os
 
@@ -97,14 +97,13 @@ def enrich_input(
 
 def add_post(
     credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-    data: plain = Depends(),
+    data: CalculateResponse = Depends(),
 ) -> secret:
     try:
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
         return secret(
-            username=data.username,
             mathematician=payload.get("sub"),
         )
     except JWTError:

@@ -34,15 +34,15 @@ def mathing(
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
-        numbers=CalculateResponse.numbers,
-        operation=CalculateResponse.operation,
+        numbers=data.numbers,
+        operation=data.operation,
         mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
 
-    numbers_list = [float(num.strip()) for num in CalculateResponse.numbers.split(",")]
+    numbers_list = [float(num.strip()) for num in data.numbers.split(",")]
 
-    if CalculateResponse.operation == "add":
+    if calc.operation == "add":
         result = sum(numbers_list)
         calc.result = result
         db.add(calc)
@@ -52,17 +52,17 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif CalculateResponse.operation == "minus":
+    elif data.operation == "minus":
         result = reduce(lambda x, y: x - y, numbers_list)
-        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
+        logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
         return {"message": "Calculation done successfully", "data": result}
-    elif CalculateResponse.operation == "times":
+    elif calc.operation == "times":
         result = reduce(operator.mul, numbers_list)
-        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
+        logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
@@ -71,12 +71,12 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif CalculateResponse.operation == "divide":
+    elif calc.operation == "divide":
         try:
             result = reduce(operator.truediv, numbers_list)
         except ZeroDivisionError:
             raise HTTPException(status_code=400, detail="Cannot divide by zero")
-        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
+        logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
@@ -85,9 +85,9 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif CalculateResponse.operation == "sqrt":
+    elif calc.operation == "sqrt":
         result = math.sqrt(numbers_list[0])
-        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
+        logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
