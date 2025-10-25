@@ -58,7 +58,7 @@ def locator(
         locate = locate.filter(Market.union.ilike(f"%{union}%"))
     if taxes:
         locate = locate.filter(Market.taxes.ilike(f"%{taxes}%"))
-        result = locate.all()
+    result = locate.all()
     if not result:
         return {"message": "no data found"}
     return {"total results": len(result), "results": result}
