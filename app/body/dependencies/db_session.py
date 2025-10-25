@@ -1,4 +1,4 @@
-from body.database.config import SessionLocal
+from app.database.config import SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
