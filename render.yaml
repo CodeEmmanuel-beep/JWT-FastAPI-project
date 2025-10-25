@@ -2,6 +2,6 @@ services:
   - type: web
     name: fastapi-app
     env: python
-    rootDir: .  
+    rootDir: body
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn body.main:app --host 0.0.0.0 --port 10000
