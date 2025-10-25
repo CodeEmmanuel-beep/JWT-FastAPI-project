@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.body.dependencies.db_session import get_db
 from datetime import datetime
 from fastapi import APIRouter
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
 from app.body.verify_jwt import verify_developer, augument
@@ -25,11 +25,41 @@ def secure(payload: dict = Depends(verify_developer)):
 
 
 @router.get("/reveal_all_market_sections")
-def get_all(db: Session = Depends(get_db), payload: dict = Depends(verify_developer)):
-    mark = db.query(Market).all()
+def get_all(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, le=100),
+    payload: dict = Depends(verify_developer),
+):
+    offset = (page - 1) * limit
+    total = db.query(Market).count()
+    mark = db.query(Market).offset(offset).limit(limit).all()
     if not mark:
         return {"message": "no sections developed"}
-    return {"total sections developed": len(mark), "required data": mark}
+    return {
+        "total sections developed": total,
+        "page": page,
+        "limit": limit,
+        "required data": mark,
+    }
+
+
+@router.get("/search")
+def locator(
+    trade: str | None = None,
+    union: str | None = None,
+    taxes: str | None = None,
+    db: Session = Depends(get_db),
+):
+    locate = db.query(Market).all()
+    if trade:
+        locate = db.query(Market).filter(Market.trade.ilike(f"%{trade}%"))
+    if union:
+        locate = db.query(Market).filter(Market.union.ilike(f"%{union}%"))
+    if taxes:
+        locate = db.query(Market).filter(Market.taxes.ilike(f"%{taxes}%"))
+        result = locate.all()
+        return {"results": locate}
 
 
 @router.get("/fetch+required_market_sections")

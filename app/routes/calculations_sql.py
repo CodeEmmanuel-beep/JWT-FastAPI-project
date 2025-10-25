@@ -6,7 +6,7 @@ from app.body.dependencies.db_session import get_db
 from app.models_sql import Calculate
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
 from app.models import secret
@@ -105,12 +105,26 @@ def mathing(
 
 @router.get("/retrieve all datas")
 def get_all(
-    db: Session = Depends(get_db), payload: dict = Depends(verify_mathematician)
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=10),
+    limit: int = Query(10, le=100),
+    payload: dict = Depends(verify_mathematician),
 ):
-    data = db.query(Calculate).all()
+    offset = (page - 1) * limit
+    total = db.query(Calculate).count()
+    data = db.query(Calculate).offset(offset).limit(limit).all()
     if not data:
         return {"message": "no file stored"}
-    return {"total": len(data), "calculations": data}
+    return {"total": total, "page": page, "limit": limit, "calculations": data}
+
+
+@router.get("/filter")
+def search(operation: str, db: Session = Depends(get_all)):
+    query = db.query(Calculate).all()
+    if operation:
+        query = db.query(Calculate).filter(Calculate.operation.ilike(f"%{operation}%"))
+        result = query.all()
+        return {"result": result}
 
 
 @router.get("/retrieve some/{calcs_id}")
@@ -127,16 +141,26 @@ def fetch_some(
 
 @router.get("/recent Calculations")
 def recent_calculations(
-    db: Session = Depends(get_db), payload: dict = Depends(verify_mathematician)
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=10),
+    limit: int = Query(10, le=100),
+    payload: dict = Depends(verify_mathematician),
 ):
-    data = db.query(Calculate).all()
+    offset = (page - 1) * limit
+    total = db.query(Calculate).count()
+    data = db.query(Calculate).offset(offset).limit(limit).all()
     if data:
         sorted_calcs = sorted(
             data,
             key=lambda x: x.time_of_calculation,
             reverse=True,
         )
-        return sorted_calcs
+        return {
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "most recent calculation": sorted_calcs,
+        }
     else:
         return {"message": "no calculations found for this user"}
 

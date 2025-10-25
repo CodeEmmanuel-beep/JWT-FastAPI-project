@@ -3,7 +3,7 @@ from app.models_sql import Task
 from fastapi import APIRouter
 from datetime import datetime, timezone
 from app.body.dependencies.db_session import get_db
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
 from app.body.verify_jwt import verify_token, enrich_input
@@ -60,11 +60,28 @@ def update_task(
 
 
 @router.get("/retrieve all")
-def get_all_tasks(db: Session = Depends(get_db), username: str = Depends(verify_token)):
-    tasks = db.query(Task).all()
+def get_all_tasks(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, le=100),
+    username: str = Depends(verify_token),
+):
+    offset = (page - 1) * limit
+    tasks = db.query(Task).offset(offset).limit(limit).all()
+    total = db.query(Task).count()
     if not tasks:
         return "no file stored"
-    return {"total": len(tasks), "tasks": tasks}
+    return {"total": total, "page": page, "limit": limit, "tasks": tasks}
+
+
+@router.get("/search")
+def filtering(description: str | None = None, db: Session = Depends(get_db)):
+    desc = db.query(Task)
+    if description:
+        desc = db.query(Task).filter(Task.description.ilike(f"%{description}%"))
+        results = desc.all()
+        return {"results": results}
+    return {"message": "such tasks does not exist"}
 
 
 @router.get("/retrieve some/{tasks_id}")
