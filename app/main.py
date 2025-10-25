@@ -16,5 +16,5 @@ app.include_router(market_sql.router)
 @app.get("/", include_in_schema=False)
 def home_page():
     return {
-        "message": "You have come a long way, finally deployed, Visit /docs to explore the endpoints."
+        "message": "Welcome to Three Dimensions API. Visit /docs to explore the endpoints."
     }
