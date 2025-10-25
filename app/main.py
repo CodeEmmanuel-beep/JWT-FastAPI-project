@@ -1,9 +1,7 @@
 from app.routes import tasks_sql, calculations_sql, market_sql
 from app.routes import task_auth, market_auth, Calculation_auth
-
-
 from fastapi import FastAPI
-import os
+
 
 app = FastAPI(title="Three Dimensions", version="1.0")
 
@@ -17,4 +15,4 @@ app.include_router(market_sql.router)
 
 @app.get("/Root")
 def home_page():
-    return {"message": "You have come a long way"}
+    return {"message": "You have come a long way, finally deployed"}
