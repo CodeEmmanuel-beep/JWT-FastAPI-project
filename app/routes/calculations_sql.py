@@ -29,6 +29,7 @@ def secure(payload: dict = Depends(verify_mathematician)):
 
 @router.post("/calculate", response_model=List[CalculateResponse])
 def mathing(
+    result: float | None = None,
     data: secret = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
@@ -102,7 +103,7 @@ def mathing(
 @router.get("/retrieve all datas", response_model=List[CalculateResponse])
 def get_all(
     db: Session = Depends(get_db),
-    page: int = Query(1, ge=10),
+    page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
     payload: dict = Depends(verify_mathematician),
 ):
