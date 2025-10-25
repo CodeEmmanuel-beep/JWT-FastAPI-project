@@ -34,13 +34,12 @@ def mathing(
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
-        numbers=data.numbers,
-        operation=data.operation,
+        id=len(calc) + 1,
         mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
 
-    numbers_list = [float(num.strip()) for num in data.numbers.split(",")]
+    numbers_list = [float(num.strip()) for num in calc.numbers.split(",")]
 
     if calc.operation == "add":
         result = sum(numbers_list)
