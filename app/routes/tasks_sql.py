@@ -78,7 +78,7 @@ def get_all_tasks(
 def filtering(description: str | None = None, db: Session = Depends(get_db)):
     desc = db.query(Task)
     if description:
-        desc = db.query(Task).filter(Task.description.ilike(f"%{description}%"))
+        desc = desc.filter(Task.description.ilike(f"%{description}%"))
         results = desc.all()
         return {"results": results}
     return {"message": "such tasks does not exist"}

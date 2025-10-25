@@ -53,15 +53,15 @@ def locator(
 ):
     locate = db.query(Market).all()
     if trade:
-        locate = db.query(Market).filter(Market.trade.ilike(f"%{trade}%"))
-        result = locate.all()
-        return {"results": locate}
+        locate = locate.filter(Market.trade.ilike(f"%{trade}%"))
     if union:
-        locate = db.query(Market).filter(Market.union.ilike(f"%{union}%"))
+        locate = locate.filter(Market.union.ilike(f"%{union}%"))
     if taxes:
-        locate = db.query(Market).filter(Market.taxes.ilike(f"%{taxes}%"))
+        locate = locate.filter(Market.taxes.ilike(f"%{taxes}%"))
         result = locate.all()
-        return {"results": locate}
+    if not result:
+        return {"message": "no data found"}
+    return {"total results": len(result), "results": result}
 
 
 @router.get("/fetch+required_market_sections")

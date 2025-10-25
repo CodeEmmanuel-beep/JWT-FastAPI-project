@@ -122,7 +122,7 @@ def get_all(
 def search(operation: str, db: Session = Depends(get_all)):
     query = db.query(Calculate).all()
     if operation:
-        query = db.query(Calculate).filter(Calculate.operation.ilike(f"%{operation}%"))
+        query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
         result = query.all()
         return {"result": result}
 
