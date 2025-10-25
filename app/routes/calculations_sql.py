@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
-from app.models import secret
+from app.models import secret, CalculateResponse
+from typing import List
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
 LOGFILE = Path("calculations.log")
@@ -26,26 +27,22 @@ def secure(payload: dict = Depends(verify_mathematician)):
     return {"Welcome, mathematician"}
 
 
-@router.post("/calculate")
+@router.post("/calculate", response_model=List[CalculateResponse])
 def mathing(
-    numbers: str,
-    operation: str,
-    result: float | None = None,
     data: secret = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
-        username=data.username,
-        numbers=numbers,
-        operation=operation,
+        numbers=CalculateResponse.numbers,
+        operation=CalculateResponse.operation,
         mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
 
-    numbers_list = [float(num.strip()) for num in numbers.split(",")]
+    numbers_list = [float(num.strip()) for num in CalculateResponse.numbers.split(",")]
 
-    if operation == "add":
+    if CalculateResponse.operation == "add":
         result = sum(numbers_list)
         calc.result = result
         db.add(calc)
@@ -55,17 +52,17 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif operation == "minus":
+    elif CalculateResponse.operation == "minus":
         result = reduce(lambda x, y: x - y, numbers_list)
-        logging.info(f"calculation done {operation}, result{result} ")
+        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
         return {"message": "Calculation done successfully", "data": result}
-    elif operation == "times":
+    elif CalculateResponse.operation == "times":
         result = reduce(operator.mul, numbers_list)
-        logging.info(f"calculation done {operation}, result{result} ")
+        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
@@ -74,12 +71,12 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif operation == "divide":
+    elif CalculateResponse.operation == "divide":
         try:
             result = reduce(operator.truediv, numbers_list)
         except ZeroDivisionError:
             raise HTTPException(status_code=400, detail="Cannot divide by zero")
-        logging.info(f"calculation done {operation}, result{result} ")
+        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
@@ -88,9 +85,9 @@ def mathing(
             "message": "Calculation done successfully",
             "data": result,
         }
-    elif operation == "sqrt":
+    elif CalculateResponse.operation == "sqrt":
         result = math.sqrt(numbers_list[0])
-        logging.info(f"calculation done {operation}, result{result} ")
+        logging.info(f"calculation done {CalculateResponse.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
@@ -103,7 +100,7 @@ def mathing(
         raise HTTPException(status_code=400, detail="unsupported operation")
 
 
-@router.get("/retrieve all datas")
+@router.get("/retrieve all datas", List[CalculateResponse])
 def get_all(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=10),
