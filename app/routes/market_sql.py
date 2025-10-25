@@ -51,7 +51,7 @@ def locator(
     taxes: str | None = None,
     db: Session = Depends(get_db),
 ):
-    locate = db.query(Market).all()
+    locate = db.query(Market)
     if trade:
         locate = locate.filter(Market.trade.ilike(f"%{trade}%"))
     if union:
