@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from body.body.dependencies.db_session import get_db
+from app.body.dependencies.db_session import get_db
 from fastapi import Depends, HTTPException, APIRouter
-from body.models_sql import Market
-from body.body.dependencies.auth_jwt import (
+from app.models_sql import Market
+from app.body.dependencies.auth_jwt import (
     verify_code,
     get_hashed_code,
     create_access_token,

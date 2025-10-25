@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
-from body.models_sql import Task
+from app.models_sql import Task
 from fastapi import APIRouter
 from datetime import datetime, timezone
-from body.body.dependencies.db_session import get_db
+from app.body.dependencies.db_session import get_db
 from fastapi import HTTPException, Depends
 import logging
 from pathlib import Path
-from body.body.verify_jwt import verify_token, enrich_input
-from body.models import Post
+from app.body.verify_jwt import verify_token, enrich_input
+from app.models import Post
 
 router = APIRouter(prefix="/Tasks", tags=["Routines"])
 LOGFILE = Path("tasks.log")

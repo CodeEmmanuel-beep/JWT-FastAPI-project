@@ -1,14 +1,14 @@
 from fastapi import Depends, HTTPException, APIRouter, status
-from body.body.dependencies.auth_jwt import (
+from app.body.dependencies.auth_jwt import (
     verify_secret,
     get_fingerprint,
     create_access_token,
     get_hashed_secret,
 )
-from body.models_sql import Calculate
+from app.models_sql import Calculate
 from datetime import timedelta
 from sqlalchemy.orm import Session
-from body.body.dependencies.db_session import get_db
+from app.body.dependencies.db_session import get_db
 from fastapi import Form
 
 router = APIRouter(prefix="/Mathematician Auth", tags=["Secured Calculations"])

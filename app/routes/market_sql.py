@@ -1,13 +1,13 @@
-from body.models_sql import Market
+from app.models_sql import Market
 from sqlalchemy.orm import Session
-from body.body.dependencies.db_session import get_db
+from app.body.dependencies.db_session import get_db
 from datetime import datetime
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
 import logging
 from pathlib import Path
-from body.body.verify_jwt import verify_developer, augument
-from body.models import dev_n
+from app.body.verify_jwt import verify_developer, augument
+from app.models import dev_n
 
 router = APIRouter(prefix="/Market Sections_sql", tags=["Contract"])
 LOGFILE = Path("market.log")

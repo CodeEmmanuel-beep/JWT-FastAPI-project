@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from body.models_sql import Task
-from body.body.dependencies.db_session import get_db
-from body.body.dependencies.auth_jwt import (
+from app.models_sql import Task
+from app.body.dependencies.db_session import get_db
+from app.body.dependencies.auth_jwt import (
     create_access_token,
     verify_password,
     hash_password,

@@ -2,14 +2,14 @@ import math
 import operator
 from functools import reduce
 from sqlalchemy.orm import Session
-from body.body.dependencies.db_session import get_db
-from body.models_sql import Calculate
+from app.body.dependencies.db_session import get_db
+from app.models_sql import Calculate
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from pathlib import Path
-from body.body.verify_jwt import verify_mathematician, add_post
-from body.models import secret
+from app.body.verify_jwt import verify_mathematician, add_post
+from app.models import secret
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
 LOGFILE = Path("calculations.log")

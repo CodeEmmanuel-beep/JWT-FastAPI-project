@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import Security, status, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
-from body.models import Description, Post, plain, secret, dev, dev_n
+from app.models import Description, Post, plain, secret, dev, dev_n
 from dotenv import load_dotenv
 import os
 
