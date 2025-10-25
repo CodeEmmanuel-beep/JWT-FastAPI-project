@@ -13,6 +13,6 @@ app.include_router(calculations_sql.router)
 app.include_router(market_sql.router)
 
 
-@app.get("/Root")
+@app.get("/" include_in_schema=False)
 def home_page():
     return {"message": "You have come a long way, finally deployed"}
