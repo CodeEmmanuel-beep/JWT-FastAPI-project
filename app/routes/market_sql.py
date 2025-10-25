@@ -54,6 +54,8 @@ def locator(
     locate = db.query(Market).all()
     if trade:
         locate = db.query(Market).filter(Market.trade.ilike(f"%{trade}%"))
+        result = locate.all()
+        return {"results": locate}
     if union:
         locate = db.query(Market).filter(Market.union.ilike(f"%{union}%"))
     if taxes:
