@@ -56,7 +56,7 @@ def login(
         )
     calc = (
         db.query(Calculate)
-        .filter(Calculate.mathematician.strip() == mathematician.strip())
+        .filter(Calculate.mathematician == mathematician.strip())
         .first()
     )
     if not calc or not verify_secret(mathematician_secret, calc.mathematician_secret):
