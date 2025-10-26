@@ -116,10 +116,24 @@ def get_all(
 ):
     offset = (page - 1) * limit
     total = db.query(Calculate).count()
-    data = db.query(Calculate).offset(offset).limit(limit).all()
+    query = db.query(Calculate)
+    result = query.offset(offset).limit(limit).all()
+    data = [
+        CalculateResponse.model_validate(
+            {
+                "mathematician": item.mathematician,
+                "numbers": item.numbers,
+                "operation": item.operation,
+                "result": item.result,
+            }
+        )
+        for item in result
+    ]
     if not data:
         return {"message": "no file stored"}
-    return PaginatedResponse(total=total, page=page, limit=limit, data=data)
+    return PaginatedResponse[CalculateResponse](
+        total=total, page=page, limit=limit, data=data
+    )
 
 
 @router.get("/filter")
