@@ -36,7 +36,7 @@ def register(
             )
     hashed_secret = get_hashed_secret(mathematician_secret)
     new_mathematician = Calculate(
-        mathematician=mathematician, mathematician_secret=hashed_secret
+        mathematician=mathematician.strip(), mathematician_secret=hashed_secret
     )
     db.add(new_mathematician)
     db.commit()
@@ -54,7 +54,11 @@ def login(
         raise HTTPException(
             status_code=403, detail="access denied, you do not know the secret"
         )
-    calc = db.query(Calculate).filter(Calculate.mathematician == mathematician).first()
+    calc = (
+        db.query(Calculate)
+        .filter(Calculate.mathematician.strip() == mathematician.strip())
+        .first()
+    )
     if not calc or not verify_secret(mathematician_secret, calc.mathematician_secret):
         raise HTTPException(status_code=403, detail="access denied, invalid entry")
     token_expires = timedelta(minutes=60)

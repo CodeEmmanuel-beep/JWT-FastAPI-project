@@ -26,7 +26,9 @@ def register(
     password = str(password)
     hashed_password = hash_password(password)
     new_user = Task(
-        username=username, password=hashed_password, nationality=nationality
+        username=username.strip(),
+        password=hashed_password,
+        nationality=nationality.strip(),
     )
     db.add(new_user)
     db.commit()
@@ -36,7 +38,7 @@ def register(
 
 @router.post("/logins")
 def login(username: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(Task).filter(Task.username == username).first()
+    user = db.query(Task).filter(Task.username.strip() == username.strip()).first()
     if not user or not verify_password(password, user.password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     token_expires = timedelta(minutes=60)

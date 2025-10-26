@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
-from app.models import secret, CalculateResponse
+from app.models import secret, CalculateResponse, PaginatedResponse
 from typing import List
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
@@ -27,15 +27,17 @@ def secure(payload: dict = Depends(verify_mathematician)):
     return {"Welcome, mathematician"}
 
 
-@router.post("/calculate", response_model=List[CalculateResponse])
+@router.post("/calculate", response_model=List(CalculateResponse))
 def mathing(
-    result: float | None = None,
-    data: secret = Depends(add_post),
+    data: CalculateResponse = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
         id=len(calc) + 1,
+        number=data.numbers,
+        operation=data.operation,
+        result=data.result,
         mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
@@ -50,9 +52,14 @@ def mathing(
         db.refresh(calc)
         return {
             "message": "Calculation done successfully",
-            "data": result,
+            "data": CalculateResponse(
+                mumbers=calc.numbers,
+                operation=calc.operation,
+                result=calc.result,
+                mathematician=calc.mathematician,
+            ),
         }
-    elif data.operation == "minus":
+    elif calc.operation == "minus":
         result = reduce(lambda x, y: x - y, numbers_list)
         logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
@@ -100,7 +107,7 @@ def mathing(
         raise HTTPException(status_code=400, detail="unsupported operation")
 
 
-@router.get("/retrieve all datas")
+@router.get("/retrieve all datas", response_model=List[PaginatedResponse])
 def get_all(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -112,7 +119,7 @@ def get_all(
     data = db.query(Calculate).offset(offset).limit(limit).all()
     if not data:
         return {"message": "no file stored"}
-    return {"total": total, "page": page, "limit": limit, "calculations": data}
+    return PaginatedResponse(total=total, page=page, limit=limit, data=data)
 
 
 @router.get("/filter")

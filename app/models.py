@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List, Generic, TypeVar
+
+T = TypeVar("T")
 
 
 class Description(BaseModel):
@@ -19,7 +20,8 @@ class plain(BaseModel):
 
 class secret(BaseModel):
     mathematician: str
-    username: str
+    operation: str
+    numbers: str
 
 
 class dev(BaseModel):
@@ -41,12 +43,10 @@ class TaskResponse(BaseModel):
 
 
 class CalculateResponse(BaseModel):
+    mathematician: str
     operation: str
     numbers: str
     result: Optional[float] = None
-
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
 
 
 class MarketResponse(BaseModel):
@@ -61,3 +61,11 @@ class MarketResponse(BaseModel):
 
     class Config:
         model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    status: str = "success"
+    page: int
+    limit: int
+    total: int
+    data: List[T]

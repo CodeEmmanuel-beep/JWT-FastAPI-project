@@ -29,7 +29,9 @@ def register(
     mark = db.query(Market).filter(Market.developer_code == hashed_code).first()
     if mark:
         raise HTTPException(status_code=400, detail="developer is already registered")
-    new_developer = Market(developer_code=hashed_code, developer_name=developer_name)
+    new_developer = Market(
+        developer_code=hashed_code, developer_name=developer_name.strip()
+    )
     db.add(new_developer)
     db.commit()
     db.refresh(new_developer)
@@ -46,7 +48,11 @@ def login(
         raise HTTPException(
             status_code=403, detail="access denied, invalid developer_code"
         )
-    mark = db.query(Market).filter(Market.developer_name == developer_name).first()
+    mark = (
+        db.query(Market)
+        .filter(Market.developer_name.strip() == developer_name.strip())
+        .first()
+    )
     if not mark or not verify_code(developer_code, mark.developer_code):
         raise HTTPException(status_code=401, detail="unauthorized developer")
     token_expires = timedelta(minutes=60)

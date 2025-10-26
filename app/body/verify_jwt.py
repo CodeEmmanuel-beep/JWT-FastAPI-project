@@ -104,6 +104,9 @@ def add_post(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
         return secret(
+            numbers=data.numbers,
+            operation=data.operation,
+            result=data.result,
             mathematician=payload.get("sub"),
         )
     except JWTError:
