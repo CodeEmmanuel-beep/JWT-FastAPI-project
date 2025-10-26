@@ -27,7 +27,7 @@ def secure(payload: dict = Depends(verify_mathematician)):
     return {"Welcome, mathematician"}
 
 
-@router.post("/calculate", response_model=List(CalculateResponse))
+@router.post("/calculate", response_model=List[CalculateResponse])
 def mathing(
     data: CalculateResponse = Depends(add_post),
     db: Session = Depends(get_db),
