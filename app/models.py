@@ -44,8 +44,8 @@ class TaskResponse(BaseModel):
 
 class CalculateResponse(BaseModel):
     mathematician: str
-    operation: str
-    numbers: str
+    operation: Optional[str] = None
+    numbers: Optional[str] = None
     result: Optional[float] = None
 
 
