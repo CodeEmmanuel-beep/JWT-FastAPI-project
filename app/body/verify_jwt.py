@@ -97,13 +97,13 @@ def enrich_input(
 
 def add_post(
     credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-    data: CalculateResponse = Depends(),
-) -> secret:
+    data: secret = Depends(),
+) -> CalculateResponse:
     try:
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
-        return secret(
+        return CalculateResponse(
             numbers=data.numbers,
             operation=data.operation,
             result=data.result,

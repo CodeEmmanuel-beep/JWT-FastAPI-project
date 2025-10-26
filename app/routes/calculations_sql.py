@@ -98,13 +98,14 @@ def mathing(
     else:
         raise HTTPException(status_code=400, detail="unsupported operation")
 
-    # @router.get("/retrieve all datas", response_model=PaginatedResponse[CalculateResponse])
-    # def get_all(
-    #   db: Session = Depends(get_db),
-    page: int = (Query(1, ge=1),)
-    limit: int = (Query(10, le=100),)
-    payload: dict = (Depends(verify_mathematician),)
-    # ):
+
+@router.get("/retrieve all datas", response_model=PaginatedResponse[CalculateResponse])
+def get_all(
+    db: Session = Depends(get_db),
+    page: int = (Query(1, ge=1)),
+    limit: int = (Query(10, le=100)),
+    payload: dict = (Depends(verify_mathematician),),
+):
     offset = (page - 1) * limit
     total = db.query(Calculate).count()
     query = db.query(Calculate)
