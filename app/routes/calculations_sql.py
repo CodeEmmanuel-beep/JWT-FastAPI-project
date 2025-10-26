@@ -27,7 +27,7 @@ def secure(payload: dict = Depends(verify_mathematician)):
     return {"Welcome, mathematician"}
 
 
-@router.post("/calculate", response_model=List[CalculateResponse])
+@router.post("/calculate")
 def mathing(
     data: CalculateResponse = Depends(add_post),
     db: Session = Depends(get_db),
@@ -37,6 +37,7 @@ def mathing(
         id=len(calc) + 1,
         number=data.numbers,
         operation=data.operation,
+        mathematician=data.mathematician,
         result=data.result,
         time_of_calculation=datetime.now(timezone.utc),
     )
@@ -49,15 +50,7 @@ def mathing(
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        return {
-            "message": "Calculation done successfully",
-            "data": CalculateResponse(
-                mumbers=calc.numbers,
-                operation=calc.operation,
-                result=calc.result,
-                mathematician=calc.mathematician,
-            ),
-        }
+        return {"message": "Calculation done successfully", "data": result}
     elif calc.operation == "minus":
         result = reduce(lambda x, y: x - y, numbers_list)
         logging.info(f"calculation done {calc.operation}, result{result} ")
