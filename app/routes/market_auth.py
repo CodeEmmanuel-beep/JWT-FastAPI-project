@@ -49,9 +49,7 @@ def login(
             status_code=403, detail="access denied, invalid developer_code"
         )
     mark = (
-        db.query(Market)
-        .filter(Market.developer_name.strip() == developer_name.strip())
-        .first()
+        db.query(Market).filter(Market.developer_name == developer_name.strip()).first()
     )
     if not mark or not verify_code(developer_code, mark.developer_code):
         raise HTTPException(status_code=401, detail="unauthorized developer")

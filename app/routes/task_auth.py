@@ -38,7 +38,7 @@ def register(
 
 @router.post("/logins")
 def login(username: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(Task).filter(Task.username.strip() == username.strip()).first()
+    user = db.query(Task).filter(Task.username == username.strip()).first()
     if not user or not verify_password(password, user.password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     token_expires = timedelta(minutes=60)
