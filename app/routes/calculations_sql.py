@@ -131,13 +131,11 @@ def get_all(
     ]
     if not data:
         return {"message": "no file stored"}
-    return PaginatedResponse[CalculateResponse](
-        total=total, page=page, limit=limit, data=data
-    )
+    return PaginatedResponse(total=total, page=page, limit=limit, data=data)
 
 
 @router.get("/filter")
-def search(operation: str, db: Session = Depends(get_all)):
+def search(operation: str, db: Session = Depends(get_db)):
     query = db.query(Calculate)
     if operation:
         query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
