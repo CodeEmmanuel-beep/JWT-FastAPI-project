@@ -107,7 +107,7 @@ def mathing(
         raise HTTPException(status_code=400, detail="unsupported operation")
 
 
-@router.get("/retrieve all datas", response_model=List[PaginatedResponse])
+@router.get("/retrieve all datas", response_model=PaginatedResponse[CalculateResponse])
 def get_all(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
