@@ -19,9 +19,9 @@ class plain(BaseModel):
 
 
 class secret(BaseModel):
-    mathematician: str
     operation: str
     numbers: str
+    result: Optional[float] = None
 
 
 class dev(BaseModel):
