@@ -24,6 +24,20 @@ class secret(BaseModel):
     result: Optional[float] = None
 
 
+class CalculateR(BaseModel):
+    mathematician: str
+    operation: Optional[str] = None
+    numbers: Optional[str] = None
+    result: Optional[float] = None
+
+
+class CalculateResponse(BaseModel):
+    mathematician: str
+    operation: Optional[str] = None
+    numbers: Optional[str] = None
+    result: Optional[float] = None
+
+
 class dev(BaseModel):
     developer_code: str
 
@@ -40,13 +54,6 @@ class TaskResponse(BaseModel):
     nationality: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class CalculateResponse(BaseModel):
-    mathematician: str
-    operation: Optional[str] = None
-    numbers: Optional[str] = None
-    result: Optional[float] = None
 
 
 class MarketResponse(BaseModel):

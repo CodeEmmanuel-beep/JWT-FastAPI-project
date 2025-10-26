@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
-from app.models import secret, CalculateResponse, PaginatedResponse
+from app.models import secret, CalculateResponse, CalculateR, PaginatedResponse
 from typing import List
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
@@ -29,7 +29,7 @@ def secure(payload: dict = Depends(verify_mathematician)):
 
 @router.post("/calculate")
 def mathing(
-    data: CalculateResponse = Depends(add_post),
+    data: CalculateR = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
 ):
