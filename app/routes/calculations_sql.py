@@ -99,7 +99,11 @@ def mathing(
         raise HTTPException(status_code=400, detail="unsupported operation")
 
 
-@router.get("/retrieve all datas", response_model=PaginatedResponse[CalculateResponse])
+@router.get(
+    "/retrieve all datas",
+    response_model=PaginatedResponse[CalculateResponse],
+    response_model_exclude_none=True,
+)
 def get_all(
     db: Session = Depends(get_db),
     page: int = (Query(1, ge=1)),
@@ -121,8 +125,6 @@ def get_all(
         )
         for item in result
     ]
-    if not data:
-        return {"message": "no file stored"}
     return PaginatedResponse(total=total, page=page, limit=limit, data=data)
 
 
