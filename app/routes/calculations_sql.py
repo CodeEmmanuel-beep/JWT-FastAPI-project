@@ -138,10 +138,12 @@ def get_all(
 
 @router.get("/filter")
 def search(operation: str, db: Session = Depends(get_all)):
-    que = db.query(Calculate)
+    query = db.query(Calculate)
     if operation:
-        que = que.filter(Calculate.operation.ilike(f"%{operation}%"))
-    result = que.all()
+        query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
+    result = query.all()
+    if not result:
+        return {"message": "sorry, no data"}
     return {"result": result}
 
 
