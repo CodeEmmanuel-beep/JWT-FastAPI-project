@@ -34,7 +34,6 @@ def mathing(
     payload: dict = Depends(verify_mathematician),
 ):
     calc = Calculate(
-        id=len(calc) + 1,
         number=data.numbers,
         operation=data.operation,
         mathematician=data.mathematician,
