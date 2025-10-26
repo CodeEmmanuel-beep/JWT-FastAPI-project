@@ -38,7 +38,6 @@ def mathing(
         number=data.numbers,
         operation=data.operation,
         result=data.result,
-        mathematician=data.mathematician,
         time_of_calculation=datetime.now(timezone.utc),
     )
 
