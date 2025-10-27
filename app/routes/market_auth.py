@@ -26,9 +26,6 @@ def register(
             status_code=403, detail="access denied, invalid developer_code"
         )
     hashed_code = get_hashed_code(developer_code)
-    mark = db.query(Market).filter(Market.developer_code == hashed_code).first()
-    if mark:
-        raise HTTPException(status_code=400, detail="developer is already registered")
     new_developer = Market(
         developer_code=hashed_code, developer_name=developer_name.strip()
     )

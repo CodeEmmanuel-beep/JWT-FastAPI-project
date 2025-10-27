@@ -7,7 +7,8 @@ from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
 from app.body.verify_jwt import verify_developer, augument
-from app.models import dev_n
+from app.models import dev_n, MarketResponse, PaginatedResponse
+from typing import List
 
 router = APIRouter(prefix="/Market Sections_sql", tags=["Contract"])
 LOGFILE = Path("market.log")
@@ -24,7 +25,11 @@ def secure(payload: dict = Depends(verify_developer)):
     return {"welcome": "Developer, you are verified"}
 
 
-@router.get("/reveal_all_market_sections")
+@router.get(
+    "/reveal_all_market_sections",
+    response_model=PaginatedResponse[MarketResponse],
+    response_model_exclude_none=True,
+)
 def get_all(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -34,17 +39,18 @@ def get_all(
     offset = (page - 1) * limit
     total = db.query(Market).count()
     mark = db.query(Market).offset(offset).limit(limit).all()
-    if not mark:
-        return {"message": "no sections developed"}
+    data = [MarketResponse.model_validate(item) for item in mark]
     return {
-        "total sections developed": total,
+        "total": total,
         "page": page,
         "limit": limit,
-        "required data": mark,
+        "data": data,
     }
 
 
-@router.get("/search")
+@router.get(
+    "/search", response_model=List[MarketResponse], response_model_exclude_none=True
+)
 def locator(
     trade: str | None = None,
     union: str | None = None,
@@ -59,12 +65,10 @@ def locator(
     if taxes:
         locate = locate.filter(Market.taxes.ilike(f"%{taxes}%"))
     result = locate.all()
-    if not result:
-        return {"message": "no data found"}
-    return {"total results": len(result), "results": result}
+    return result
 
 
-@router.get("/fetch+required_market_sections")
+@router.get("/fetch required_market_sections")
 def getting_some(
     section: str,
     db: Session = Depends(get_db),
@@ -83,7 +87,6 @@ def dev(
     traders: int,
     sales: float,
     taxes: str,
-    union: str,
     data: dev_n = Depends(augument),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_developer),
@@ -94,16 +97,15 @@ def dev(
         traders=traders,
         sales_per_day=sales,
         taxes=taxes,
-        union=union,
+        union=data.union,
         developer_name=data.developer_name,
-        developer_code=data.developer_code,
     )
     logging.info("Section Name %s", section)
     logging.info("Trade Type %s", mark.trade)
     logging.info("Number of Traders %s", traders)
     logging.info("Sales Per Day %s", mark.sales_per_day)
     logging.info("Taxes Applied %s", taxes)
-    logging.info("Union Name %s", union)
+    logging.info("Union Name %s", data.union)
     db.add(mark)
     db.commit()
     db.refresh(mark)

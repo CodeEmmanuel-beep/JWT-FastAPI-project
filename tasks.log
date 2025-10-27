@@ -79,3 +79,63 @@
 2025-10-24 13:11:43,244 INFO Sales Per Day 1e+82
 2025-10-24 13:11:43,245 INFO Taxes Applied no
 2025-10-24 13:11:43,245 INFO Union Name yes
+2025-10-26 19:40:20,851 INFO calculation done divide, result0.7142857142857143 
+2025-10-26 19:40:56,253 INFO calculation done times, result35.0 
+2025-10-26 19:41:04,402 INFO calculation done minus, result-2.0 
+2025-10-26 19:41:25,278 INFO calculation done sqrt, result2.23606797749979 
+2025-10-26 19:53:47,207 INFO calculation done times, result4400.0 
+2025-10-26 20:36:23,205 INFO calculation done divide, result0.625 
+2025-10-27 01:14:01,037 INFO Section Name 2
+2025-10-27 01:14:01,038 INFO Trade Type sabi boy
+2025-10-27 01:14:01,038 INFO Number of Traders 5
+2025-10-27 01:14:01,038 INFO Sales Per Day 50.0
+2025-10-27 01:14:01,038 INFO Taxes Applied no
+2025-10-27 01:14:01,041 INFO Union Name no
+2025-10-27 01:14:05,137 INFO Section Name 2
+2025-10-27 01:14:05,137 INFO Trade Type sabi boy
+2025-10-27 01:14:05,137 INFO Number of Traders 5
+2025-10-27 01:14:05,137 INFO Sales Per Day 50.0
+2025-10-27 01:14:05,137 INFO Taxes Applied no
+2025-10-27 01:14:05,138 INFO Union Name no
+2025-10-27 01:14:28,179 INFO Section Name 2
+2025-10-27 01:14:28,179 INFO Trade Type sabi boy
+2025-10-27 01:14:28,179 INFO Number of Traders 5
+2025-10-27 01:14:28,180 INFO Sales Per Day 50.0
+2025-10-27 01:14:28,180 INFO Taxes Applied no
+2025-10-27 01:14:28,180 INFO Union Name no
+2025-10-27 01:14:39,465 INFO Section Name 2
+2025-10-27 01:14:39,465 INFO Trade Type sabi boy
+2025-10-27 01:14:39,465 INFO Number of Traders 5
+2025-10-27 01:14:39,466 INFO Sales Per Day 50.0
+2025-10-27 01:14:39,466 INFO Taxes Applied no
+2025-10-27 01:14:39,466 INFO Union Name no
+2025-10-27 01:51:07,835 INFO Section Name 5
+2025-10-27 01:51:07,836 INFO Trade Type sabi boy
+2025-10-27 01:51:07,837 INFO Number of Traders 5
+2025-10-27 01:51:07,837 INFO Sales Per Day 50.0
+2025-10-27 01:51:07,838 INFO Taxes Applied yes
+2025-10-27 01:51:07,838 INFO Union Name no
+2025-10-27 01:51:10,162 INFO Section Name 5
+2025-10-27 01:51:10,162 INFO Trade Type sabi boy
+2025-10-27 01:51:10,162 INFO Number of Traders 5
+2025-10-27 01:51:10,162 INFO Sales Per Day 50.0
+2025-10-27 01:51:10,163 INFO Taxes Applied yes
+2025-10-27 01:51:10,163 INFO Union Name no
+2025-10-27 01:51:19,361 INFO Section Name 5
+2025-10-27 01:51:19,362 INFO Trade Type cool kid
+2025-10-27 01:51:19,362 INFO Number of Traders 5
+2025-10-27 01:51:19,362 INFO Sales Per Day 50.0
+2025-10-27 01:51:19,362 INFO Taxes Applied yes
+2025-10-27 01:51:19,362 INFO Union Name no
+2025-10-27 01:51:20,453 INFO Section Name 5
+2025-10-27 01:51:20,454 INFO Trade Type cool kid
+2025-10-27 01:51:20,454 INFO Number of Traders 5
+2025-10-27 01:51:20,454 INFO Sales Per Day 50.0
+2025-10-27 01:51:20,454 INFO Taxes Applied yes
+2025-10-27 01:51:20,454 INFO Union Name no
+2025-10-27 01:51:35,033 INFO Section Name 88
+2025-10-27 01:51:35,033 INFO Trade Type nasty
+2025-10-27 01:51:35,034 INFO Number of Traders 5
+2025-10-27 01:51:35,034 INFO Sales Per Day 50.0
+2025-10-27 01:51:35,034 INFO Taxes Applied yes
+2025-10-27 01:51:35,034 INFO Union Name no

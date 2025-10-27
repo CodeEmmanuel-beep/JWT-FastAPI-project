@@ -36,7 +36,6 @@ class Calculate(Base):
     id = Column(Integer, primary_key=True, index=True)
     mathematician = Column(String)
     mathematician_secret = Column(String)
-    username = Column(String)
     operation = Column(String)
     numbers = Column(String)
     result = Column(Float)

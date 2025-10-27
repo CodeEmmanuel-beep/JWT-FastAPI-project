@@ -26,17 +26,10 @@ def register(
         raise HTTPException(
             status_code=403, detail="access denied, you do not know the secret"
         )
-    fingerprint = get_fingerprint(mathematician_secret)
-    calc = db.query(Calculate.mathematician_secret).all()
-    for (stored_secret,) in calc:
-        if get_fingerprint(stored_secret) and stored_secret == fingerprint:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="you can not tell the same secret twice",
-            )
     hashed_secret = get_hashed_secret(mathematician_secret)
     new_mathematician = Calculate(
-        mathematician=mathematician.strip(), mathematician_secret=hashed_secret
+        mathematician=mathematician.strip(),
+        mathematician_secret=hashed_secret.strip(),
     )
     db.add(new_mathematician)
     db.commit()
@@ -59,8 +52,10 @@ def login(
         .filter(Calculate.mathematician == mathematician.strip())
         .first()
     )
-    if not calc or not verify_secret(mathematician_secret, calc.mathematician_secret):
+    if not calc:
         raise HTTPException(status_code=403, detail="access denied, invalid entry")
+    if not verify_secret(mathematician_secret.strip(), calc.mathematician_secret):
+        raise HTTPException(status_code=403, detail="hidden secret")
     token_expires = timedelta(minutes=60)
     create_access = create_access_token(
         data={

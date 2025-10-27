@@ -24,13 +24,6 @@ class secret(BaseModel):
     result: Optional[float] = None
 
 
-class CalculateR(BaseModel):
-    mathematician: str
-    operation: Optional[str] = None
-    numbers: Optional[str] = None
-    result: Optional[float] = None
-
-
 class CalculateResponse(BaseModel):
     mathematician: str
     operation: Optional[str] = None
@@ -38,18 +31,28 @@ class CalculateResponse(BaseModel):
     result: Optional[float] = None
 
 
+class CalculateRes(BaseModel):
+    id: int
+    mathematician: str
+    operation: Optional[str] = None
+    numbers: Optional[str] = None
+    result: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class dev(BaseModel):
-    developer_code: str
+    union: str
 
 
 class dev_n(BaseModel):
     developer_name: str
-    developer_code: str
+    union: str
 
 
 class TaskResponse(BaseModel):
     id: Optional[int]
-    description: str
+    description: Optional[str]
     complete: bool = False
     nationality: str
 
@@ -59,15 +62,13 @@ class TaskResponse(BaseModel):
 class MarketResponse(BaseModel):
     id: Optional[int]
     developer_name: str
-    section: int
-    trade: str
-    traders: int
-    sales_per_day: float
-    taxes: str
-    union: str
-
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
+    section: Optional[int]
+    trade: Optional[str]
+    traders: Optional[int]
+    sales_per_day: Optional[float]
+    taxes: Optional[str]
+    union: Optional[str]
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedResponse(BaseModel, Generic[T]):

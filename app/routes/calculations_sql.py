@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
-from app.models import secret, CalculateResponse, CalculateR, PaginatedResponse
+from app.models import secret, CalculateResponse, PaginatedResponse, CalculateRes
 from typing import List
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
@@ -29,7 +29,7 @@ def secure(payload: dict = Depends(verify_mathematician)):
 
 @router.post("/calculate")
 def mathing(
-    data: CalculateR = Depends(add_post),
+    data: CalculateResponse = Depends(add_post),
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_mathematician),
 ):
@@ -49,7 +49,10 @@ def mathing(
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        return {"message": "Calculation done successfully", "data": result}
+        return {
+            "message": "Calculation done successfully",
+            "data": result,
+        }
     elif calc.operation == "minus":
         result = reduce(lambda x, y: x - y, numbers_list)
         logging.info(f"calculation done {calc.operation}, result{result} ")
@@ -100,34 +103,24 @@ def mathing(
 
 @router.get(
     "/retrieve all datas",
-    response_model=PaginatedResponse[CalculateResponse],
+    response_model=PaginatedResponse[CalculateRes],
     response_model_exclude_none=True,
 )
 def get_all(
     db: Session = Depends(get_db),
     page: int = (Query(1, ge=1)),
     limit: int = (Query(10, le=100)),
-    payload: dict = (Depends(verify_mathematician),),
+    payload: dict = Depends(verify_mathematician),
 ):
     offset = (page - 1) * limit
     total = db.query(Calculate).count()
     query = db.query(Calculate)
     result = query.offset(offset).limit(limit).all()
-    data = [
-        CalculateResponse.model_validate(
-            {
-                "mathematician": item.mathematician,
-                "numbers": item.numbers,
-                "operation": item.operation,
-                "result": item.result,
-            }
-        )
-        for item in result
-    ]
-    return PaginatedResponse(total=total, page=page, limit=limit, data=data)
+    data = [CalculateRes.model_validate(item) for item in result]
+    return {"total": total, "page": page, "limit": limit, "data": data}
 
 
-@router.get("/filter")
+@router.get("/filter", response_model=List[CalculateRes])
 def search(operation: str, db: Session = Depends(get_db)):
     query = db.query(Calculate)
     if operation:
@@ -135,7 +128,7 @@ def search(operation: str, db: Session = Depends(get_db)):
     result = query.all()
     if not result:
         return {"message": "sorry, no data"}
-    return {"result": result}
+    return result
 
 
 @router.get("/retrieve some/{calcs_id}")
@@ -150,30 +143,29 @@ def fetch_some(
     return data
 
 
-@router.get("/recent Calculations")
+@router.get("/recent Calculations", response_model=PaginatedResponse[CalculateRes])
 def recent_calculations(
     db: Session = Depends(get_db),
-    page: int = Query(1, ge=10),
+    page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
     payload: dict = Depends(verify_mathematician),
 ):
     offset = (page - 1) * limit
     total = db.query(Calculate).count()
-    data = db.query(Calculate).offset(offset).limit(limit).all()
-    if data:
-        sorted_calcs = sorted(
-            data,
-            key=lambda x: x.time_of_calculation,
-            reverse=True,
-        )
-        return {
-            "total": total,
-            "page": page,
-            "limit": limit,
-            "most recent calculation": sorted_calcs,
-        }
-    else:
-        return {"message": "no calculations found for this user"}
+    data = (
+        db.query(Calculate)
+        .order_by(Calculate.time_of_calculation.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    mark = [CalculateRes.model_validate(item) for item in data]
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "data": mark,
+    }
 
 
 @router.delete("/clear all")

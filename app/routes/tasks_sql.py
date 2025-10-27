@@ -7,7 +7,8 @@ from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
 from app.body.verify_jwt import verify_token, enrich_input
-from app.models import Post
+from app.models import Post, TaskResponse, PaginatedResponse
+from typing import List
 
 router = APIRouter(prefix="/Tasks", tags=["Routines"])
 LOGFILE = Path("tasks.log")
@@ -59,7 +60,11 @@ def update_task(
     return {"message": f"Task {task_id} updated successfully"}
 
 
-@router.get("/retrieve all")
+@router.get(
+    "/retrieve all",
+    response_model=PaginatedResponse[TaskResponse],
+    response_model_exclude_none=True,
+)
 def get_all_tasks(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -69,19 +74,20 @@ def get_all_tasks(
     offset = (page - 1) * limit
     tasks = db.query(Task).offset(offset).limit(limit).all()
     total = db.query(Task).count()
+    data = [TaskResponse.model_validate(item) for item in tasks]
     if not tasks:
         return "no file stored"
-    return {"total": total, "page": page, "limit": limit, "tasks": tasks}
+    return {"total": total, "page": page, "limit": limit, "data": data}
 
 
-@router.get("/search")
+@router.get("/search", response_model=List[TaskResponse])
 def filtering(description: str | None = None, db: Session = Depends(get_db)):
     desc = db.query(Task)
     if description:
         desc = desc.filter(Task.description.ilike(f"%{description}%"))
     results = desc.all()
     if results:
-        return {"results": results}
+        return results
     return {"message": "such tasks does not exist"}
 
 
@@ -111,24 +117,21 @@ def completed(
         return {"message": f"{task_id } completed"}
 
 
-@router.get("/completed tasks")
+@router.get("/completed tasks", response_model=List[TaskResponse])
 def completed_data(
     db: Session = Depends(get_db), username: str = Depends(verify_token)
 ):
     data = db.query(Task).filter(Task.complete == True).all()
     if data:
-        return {"you have completed these tasks": data, "total completed": len(data)}
+        return data
     return {"message" "no tasks completed"}
 
 
-@router.get("/undone tasks")
+@router.get("/undone tasks", response_model=List[TaskResponse])
 def not_complete(db: Session = Depends(get_db), username: str = Depends(verify_token)):
     data = db.query(Task).filter(Task.complete == False).all()
     if data:
-        return {
-            "you have not completed these tasks": data,
-            "total completed": len(data),
-        }
+        return data
     return {"message": "all tasks completed"}
 
 
