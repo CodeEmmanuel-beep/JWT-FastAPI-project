@@ -1,5 +1,8 @@
 {
     "build": {
         "dockerfile": "Dockerfile"
+    },
+    "deploy": {
+        "startCommand": "python -m app.main"
     }
 }
