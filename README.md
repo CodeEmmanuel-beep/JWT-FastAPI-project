@@ -16,6 +16,7 @@ A full-featured backend API built with **FastAPI** and **SQLAlchemy**, implement
 - **Centralized Logging System**
 - **Environment-based Secret Key Management**
 - **Optimized SQLAlchemy Integration**
+- **Pagination, StandardResponse and DynamicResponse**
 
 ---
 
