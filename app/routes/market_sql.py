@@ -1,13 +1,19 @@
 from app.models_sql import Market
 from sqlalchemy.orm import Session
 from app.body.dependencies.db_session import get_db
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
 from app.body.verify_jwt import verify_developer, augument
-from app.models import dev_n, MarketResponse, PaginatedResponse
+from app.models import (
+    dev_n,
+    MarketResponse,
+    PaginatedResponse,
+    StandardResponse,
+    PaginatedMetadata,
+)
 from typing import List
 
 router = APIRouter(prefix="/Market Sections_sql", tags=["Contract"])
@@ -27,7 +33,7 @@ def secure(payload: dict = Depends(verify_developer)):
 
 @router.get(
     "/reveal_all_market_sections",
-    response_model=PaginatedResponse[MarketResponse],
+    response_model=StandardResponse[PaginatedMetadata[MarketResponse]],
     response_model_exclude_none=True,
 )
 def get_all(
@@ -39,24 +45,29 @@ def get_all(
     offset = (page - 1) * limit
     total = db.query(Market).count()
     mark = db.query(Market).offset(offset).limit(limit).all()
-    data = [MarketResponse.model_validate(item) for item in mark]
-    return {
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "data": data,
-    }
+    data = PaginatedMetadata[MarketResponse](
+        items=[MarketResponse.model_validate(item) for item in mark],
+        pagination=PaginatedResponse(page=page, limit=limit, total=total),
+    )
+    return StandardResponse(status="success", message="contracted sections", data=data)
 
 
 @router.get(
-    "/search", response_model=List[MarketResponse], response_model_exclude_none=True
+    "/search",
+    response_model=StandardResponse[PaginatedMetadata[MarketResponse]],
+    response_model_exclude_none=True,
 )
 def locator(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, le=100),
     trade: str | None = None,
     union: str | None = None,
     taxes: str | None = None,
     db: Session = Depends(get_db),
+    payload: dict = Depends(verify_developer),
 ):
+    offset = (page - 1) * limit
+    total = db.query(Market).count()
     locate = db.query(Market)
     if trade:
         locate = locate.filter(Market.trade.ilike(f"%{trade}%"))
@@ -64,8 +75,12 @@ def locator(
         locate = locate.filter(Market.union.ilike(f"%{union}%"))
     if taxes:
         locate = locate.filter(Market.taxes.ilike(f"%{taxes}%"))
-    result = locate.all()
-    return result
+    result = locate.offset(offset).limit(limit).all()
+    data = PaginatedMetadata[MarketResponse](
+        items=[MarketResponse.model_validate(item) for item in result],
+        pagination=PaginatedResponse(page=page, limit=limit, total=total),
+    )
+    return StandardResponse(status="success", message="requested data", data=data)
 
 
 @router.get("/fetch required_market_sections")
@@ -112,23 +127,49 @@ def dev(
     return {"message": "section developed successfully"}
 
 
-@router.put("/update")
+@router.put("/update", response_model=StandardResponse)
 def change(
     section: str,
     trade: str,
     traders: str | None = None,
+    sales_per_day: float | None = None,
+    taxes: str | None = None,
+    union: str | None = None,
     db: Session = Depends(get_db),
     payload: dict = Depends(verify_developer),
 ):
     data = db.query(Market).filter(Market.section == section).first()
     if not data:
         raise HTTPException(status_code=400, detail="invalid section")
-    data.trade = trade
-    data.traders = traders
+    if trade:
+        data.trade = trade
+    if traders:
+        data.traders = traders
+    if sales_per_day:
+        data.sales_per_day = sales_per_day
+    if taxes:
+        data.taxes = taxes
+    if union:
+        data.union = union
+    data.time_of_commencement = datetime.now(timezone.utc)
     logging.info("section update %s", section, trade)
     db.commit()
     db.refresh(data)
-    return {"message": "update successful"}
+    return {
+        "status": "success",
+        "message": "section successfully updated",
+        "data": {
+            "id": data.id,
+            "section": data.section,
+            "developer": data.developer_name,
+            "trade": data.trade,
+            "traders": data.traders,
+            "sales_per_day": data.sales_per_day,
+            "taxes": data.taxes,
+            "union": data.union,
+            "commencement": data.time_of_commencement,
+        },
+    }
 
 
 @router.delete("/clear_all")
@@ -142,7 +183,7 @@ def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_develope
     return {"message": "data successfully wiped"}
 
 
-@router.delete("/erase")
+@router.delete("/erase", response_model=StandardResponse)
 def delete_one(
     section: int,
     db: Session = Depends(get_db),
@@ -154,4 +195,12 @@ def delete_one(
     logging.info("deleted tasks %s", section)
     db.delete(data)
     db.commit()
-    return {"message": f"{section} deleted"}
+    return {
+        "status": "success",
+        "message": "section successfully deleted",
+        "data": {
+            "id": data.id,
+            "section": data.section,
+            "developer": data.developer_name,
+        },
+    }

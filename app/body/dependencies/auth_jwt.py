@@ -11,7 +11,9 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is missing or not loaded from .env")
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv("ALGORITHM")
+if not ALGORITHM:
+    raise RuntimeError("ALGORITHM environment variable is missing or empty")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -43,10 +45,6 @@ def verify_secret(plain_secret: str, hashed_secret: str):
 
 def get_hashed_secret(secret: str):
     return pwd_context.hash(secret)
-
-
-def get_fingerprint(secret: str) -> str:
-    return hashlib.sha256(secret.encode()).hexdigest()
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

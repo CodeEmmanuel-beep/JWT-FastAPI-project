@@ -9,30 +9,44 @@ from app.body.dependencies.auth_jwt import (
 )
 from datetime import timedelta
 from fastapi import Form
+from dotenv import load_dotenv
+import os
 
-router = APIRouter(prefix="/Market Authentification", tags=["Secure Development"])
 
-ACCESS_CODES = {20005, 30005, 40005, 50005}
+router = APIRouter(prefix="/Market Authentication", tags=["Secure Development"])
+load_dotenv()
+ACCESS_CODES = set(map(int, os.getenv("ACCESS_CODES", "").split(",")))
+if not ACCESS_CODES:
+    raise RuntimeError("ACCESS_CODES environment variable is missing or empty")
 
 
 @router.post("/registration")
 def register(
     developer_code: int = Form(...),
     developer_name: str = Form(...),
+    route: str = Form("markets"),
     db: Session = Depends(get_db),
 ):
     if developer_code not in ACCESS_CODES:
         raise HTTPException(
             status_code=403, detail="access denied, invalid developer_code"
         )
+    if route != "markets":
+        raise HTTPException(status_code=403, detail="wrong route")
     hashed_code = get_hashed_code(developer_code)
     new_developer = Market(
-        developer_code=hashed_code, developer_name=developer_name.strip()
+        developer_code=hashed_code,
+        developer_name=developer_name.strip(),
+        route=route.strip(),
     )
     db.add(new_developer)
     db.commit()
     db.refresh(new_developer)
-    return {developer_name: "you are successfully registerd, welcome"}
+    return {
+        "status": "success",
+        "message": f"{developer_name} registered successfully",
+        "data": {"name": developer_name.strip(), "path": route},
+    }
 
 
 @router.post("/logins")
@@ -52,7 +66,14 @@ def login(
         raise HTTPException(status_code=401, detail="unauthorized developer")
     token_expires = timedelta(minutes=60)
     create_token = create_access_token(
-        data={"sub": mark.developer_name, "code": mark.developer_code},
+        data={
+            "sub": mark.developer_name,
+            "route": mark.route,
+        },
         expires_delta=token_expires,
     )
-    return {"access_token": create_token, "token_type": "bearer"}
+    return {
+        "status": "success",
+        "message": f"{developer_name} logged in successfully",
+        "data": {"access_token": create_token, "token_type": "bearer"},
+    }

@@ -15,6 +15,7 @@ class Task(Base):
     description = Column(String)
     complete = Column(Boolean, default=False)
     nationality = Column(String)
+    route = __tablename__
     time_of_execution = Column(DateTime, default=current_utc_time)
 
 
@@ -29,6 +30,8 @@ class Market(Base):
     sales_per_day = Column(Float)
     taxes = Column(String)
     union = Column(String)
+    route = __tablename__
+    time_of_commencement = Column(DateTime, default=current_utc_time)
 
 
 class Calculate(Base):
@@ -38,5 +41,6 @@ class Calculate(Base):
     mathematician_secret = Column(String)
     operation = Column(String)
     numbers = Column(String)
+    route = __tablename__
     result = Column(Float)
     time_of_calculation = Column(DateTime, default=current_utc_time)

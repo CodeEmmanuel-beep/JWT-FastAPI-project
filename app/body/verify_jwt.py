@@ -8,7 +8,11 @@ import os
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is missing or empty")
+ALGORITHM = os.getenv("ALGORITHM")
+if not ALGORITHM:
+    raise RuntimeError("ALGORITHM environment variable is missing or empty")
 
 security_scheme = HTTPBearer()
 
@@ -40,7 +44,7 @@ def verify_developer(
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
-        if payload.get("code") is None:
+        if payload.get("route") != "markets":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="you are not a developer",
@@ -89,6 +93,7 @@ def enrich_input(
         return Post(
             description=body.description,
             name=payload.get("sub"),
+            route=payload.get("route"),
             nationality=payload.get("nationality"),
         )
     except JWTError:
@@ -107,6 +112,7 @@ def add_post(
             numbers=data.numbers,
             operation=data.operation,
             result=data.result,
+            route=payload.get("route"),
             mathematician=payload.get("sub"),
         )
     except JWTError:
@@ -123,7 +129,11 @@ def augument(
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
-        return dev_n(union=data.union, developer_name=payload.get("sub"))
+        return dev_n(
+            route=payload.get("route"),
+            union=data.union,
+            developer_name=payload.get("sub"),
+        )
     except JWTError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="could not validate"

@@ -9,7 +9,13 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
 from app.body.verify_jwt import verify_mathematician, add_post
-from app.models import secret, CalculateResponse, PaginatedResponse, CalculateRes
+from app.models import (
+    CalculateResponse,
+    PaginatedResponse,
+    CalculateRes,
+    StandardResponse,
+    PaginatedMetadata,
+)
 from typing import List
 
 router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
@@ -103,7 +109,7 @@ def mathing(
 
 @router.get(
     "/retrieve all datas",
-    response_model=PaginatedResponse[CalculateRes],
+    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
     response_model_exclude_none=True,
 )
 def get_all(
@@ -116,19 +122,39 @@ def get_all(
     total = db.query(Calculate).count()
     query = db.query(Calculate)
     result = query.offset(offset).limit(limit).all()
-    data = [CalculateRes.model_validate(item) for item in result]
-    return {"total": total, "page": page, "limit": limit, "data": data}
+    data = PaginatedMetadata[CalculateRes](
+        items=[CalculateRes.model_validate(t) for t in result],
+        pagination=PaginatedResponse(page=page, limit=limit, total=total),
+    )
+    return StandardResponse(
+        status="success", message="fetched tasks successfully", data=data
+    )
 
 
-@router.get("/filter", response_model=List[CalculateRes])
-def search(operation: str, db: Session = Depends(get_db)):
+@router.get(
+    "/filter",
+    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
+    response_model_exclude_none=True,
+)
+def search(
+    operation: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, le=100),
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * limit
+    total = db.query(Calculate).count()
     query = db.query(Calculate)
     if operation:
         query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
-    result = query.all()
+    result = query.offset(offset).i(limit).all()
+    data = PaginatedMetadata[CalculateRes](
+        items=[CalculateRes.model_validate(t) for t in result],
+        pagination=PaginatedResponse(page=page, limit=limit, total=total),
+    )
     if not result:
         return {"message": "sorry, no data"}
-    return result
+    return StandardResponse(status="success", message="requested data", data=data)
 
 
 @router.get("/retrieve some/{calcs_id}")
@@ -143,7 +169,11 @@ def fetch_some(
     return data
 
 
-@router.get("/recent Calculations", response_model=PaginatedResponse[CalculateRes])
+@router.get(
+    "/recent Calculations",
+    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
+    response_model_exclude_none=True,
+)
 def recent_calculations(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -159,13 +189,13 @@ def recent_calculations(
         .limit(limit)
         .all()
     )
-    mark = [CalculateRes.model_validate(item) for item in data]
-    return {
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "data": mark,
-    }
+    mark = PaginatedMetadata[CalculateRes](
+        items=[CalculateRes.model_validate(it) for it in data],
+        pagination=PaginatedResponse(page=page, limit=limit, total=total),
+    )
+    return StandardResponse(
+        status="success", message="most recent calculations fetched properly", data=mark
+    )
 
 
 @router.delete("/clear all")
@@ -179,7 +209,7 @@ def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_mathemat
     return {"message": "data wiped"}
 
 
-@router.delete("/erase")
+@router.delete("/erase", response_model=StandardResponse)
 def delete_one(
     calc_id: int,
     db: Session = Depends(get_db),
@@ -191,4 +221,12 @@ def delete_one(
     logging.info("deleted tasks %s", calc_id)
     db.delete(data)
     db.commit()
-    return {"message": f"{calc_id} deleted"}
+    return {
+        "status": "success",
+        "message": "section successfully deleted",
+        "data": {
+            "id": data.id,
+            "operation": data.operation,
+            "mathematician": data.mathematician,
+        },
+    }
