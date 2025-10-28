@@ -5,12 +5,9 @@ from fastapi import status, Depends, HTTPException
 from fastapi import Security
 from dotenv import load_dotenv
 import os
-import hashlib
 
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY is missing or not loaded from .env")
+SECRET_KEY = "-B05Ab54rkxOyFEWSEaceHzhb_xxZE7KT1O2ebnmDe8"
+
 ALGORITHM = os.getenv("ALGORITHM")
 if not ALGORITHM:
     raise RuntimeError("ALGORITHM environment variable is missing or empty")
