@@ -197,7 +197,7 @@ def delete_one(
     db.commit()
     return {
         "status": "success",
-        "message": "section successfully deleted",
+        "message": "section deleted successfully",
         "data": {
             "id": data.id,
             "section": data.section,
