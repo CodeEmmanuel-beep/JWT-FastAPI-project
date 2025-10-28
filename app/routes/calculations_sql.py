@@ -147,13 +147,11 @@ def search(
     query = db.query(Calculate)
     if operation:
         query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
-    result = query.offset(offset).i(limit).all()
+    result = query.offset(offset).limit(limit).all()
     data = PaginatedMetadata[CalculateRes](
         items=[CalculateRes.model_validate(t) for t in result],
         pagination=PaginatedResponse(page=page, limit=limit, total=total),
     )
-    if not result:
-        return {"message": "sorry, no data"}
     return StandardResponse(status="success", message="requested data", data=data)
 
 

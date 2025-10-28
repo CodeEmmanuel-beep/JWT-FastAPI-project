@@ -14,7 +14,10 @@ import os
 
 router = APIRouter(prefix="/Mathematician Auth", tags=["Secured Calculations"])
 
-TRUE_SECRETS = {"pie", "radius", "trig", "fraction"}
+load_dotenv()
+TRUE_SECRETS = set(os.getenv("TRUE_SECRETS", "").split(","))
+if not TRUE_SECRETS:
+    raise RuntimeError("TRUE_SECRET not accessible")
 
 
 @router.post("/registration")

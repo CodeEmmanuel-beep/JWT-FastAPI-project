@@ -15,7 +15,9 @@ import os
 
 router = APIRouter(prefix="/Market Authentication", tags=["Secure Development"])
 load_dotenv()
-ACCESS_CODES = {20005, 30005, 40005, 50005}
+ACCESS_CODES = set(map(int, os.getenv("ACCESS_CODES", "").split(",")))
+if not ACCESS_CODES:
+    raise RuntimeError("can not locate ACCESS_CODES")
 
 
 @router.post("/registration")
