@@ -130,7 +130,7 @@ def dev(
 @router.put("/update", response_model=StandardResponse)
 def change(
     section: str,
-    trade: str,
+    trade: str | None = None,
     traders: str | None = None,
     sales_per_day: float | None = None,
     taxes: str | None = None,
