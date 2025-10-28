@@ -20,7 +20,7 @@ def verify_mathematician(
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
-        if payload.get("mathematician") is None:
+        if payload.get("route") != "calculations":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="you are not a mathematician",
