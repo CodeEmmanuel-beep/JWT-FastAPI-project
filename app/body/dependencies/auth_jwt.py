@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 
 SECRET_KEY = "-B05Ab54rkxOyFEWSEaceHzhb_xxZE7KT1O2ebnmDe8"
-
+load_dotenv()
 ALGORITHM = os.getenv("ALGORITHM")
 if not ALGORITHM:
     raise RuntimeError("ALGORITHM environment variable is missing or empty")
