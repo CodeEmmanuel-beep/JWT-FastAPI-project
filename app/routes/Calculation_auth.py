@@ -13,10 +13,8 @@ from dotenv import load_dotenv
 import os
 
 router = APIRouter(prefix="/Mathematician Auth", tags=["Secured Calculations"])
-load_dotenv()
-TRUE_SECRETS = set(os.getenv("TRUE_SECRETS", "").split(","))
-if not TRUE_SECRETS:
-    raise RuntimeError("TRUE_SECRETS NOT ACCESSED")
+
+TRUE_SECRETS = {"pie", "radius", "trig", "fraction"}
 
 
 @router.post("/registration")
