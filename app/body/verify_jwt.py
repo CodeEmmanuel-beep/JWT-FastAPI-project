@@ -6,10 +6,7 @@ from app.models import Description, Post, CalculateResponse, secret, dev, dev_n
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable is missing or empty")
+SECRET_KEY = "-B05Ab54rkxOyFEWSEaceHzhb_xxZE7KT1O2ebnmDe8"
 ALGORITHM = os.getenv("ALGORITHM")
 if not ALGORITHM:
     raise RuntimeError("ALGORITHM environment variable is missing or empty")
