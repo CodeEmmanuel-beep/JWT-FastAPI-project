@@ -1,4 +1,4 @@
-from app.database.config import Base, engine
+from app.core.db import Base, engine
 from app.models_sql import Task, Market, Calculate
 
 print("Creating database tables....")

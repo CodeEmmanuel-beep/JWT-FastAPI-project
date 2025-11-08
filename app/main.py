@@ -1,5 +1,15 @@
-from app.routes import tasks_sql, calculations_sql, market_sql
-from app.routes import task_auth, market_auth, Calculation_auth
+from app.routes import (
+    tasks_sql,
+    calculations_sql,
+    market_sql,
+    Expense,
+    priority,
+    blog_post,
+    comment_stars,
+    auth,
+    profile,
+)
+from app.routes import reaction
 from fastapi import Request, FastAPI, HTTPException, status
 from pydantic import ValidationError
 import uvicorn
@@ -35,10 +45,14 @@ async def log_request(request: Request, call_next):
     return process
 
 
-app.include_router(Calculation_auth.router)
-app.include_router(market_auth.router)
-app.include_router(task_auth.router)
+app.include_router(auth.router)
+app.include_router(profile.router)
+app.include_router(reaction.router)
 app.include_router(tasks_sql.router)
+app.include_router(priority.router)
+app.include_router(Expense.router)
+app.include_router(blog_post.router)
+app.include_router(comment_stars.router)
 app.include_router(calculations_sql.router)
 app.include_router(market_sql.router)
 app.add_exception_handler(HTTPException, make_http_exception_handler())

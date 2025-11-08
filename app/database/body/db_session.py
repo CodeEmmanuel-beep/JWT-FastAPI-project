@@ -1,10 +1,9 @@
-from app.core.db import SessionLocal
+from app.core.db import SessionLocal, engine
 from sqlalchemy.orm import Session
-from fastapi import Depends
 
 
 def get_db():
-    db = Session = SessionLocal()
+    db: Session = SessionLocal
     try:
         yield db
     finally:

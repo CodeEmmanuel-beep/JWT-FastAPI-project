@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi import HTTPException, Depends, Query
 import logging
 from pathlib import Path
-from app.body.verify_jwt import verify_developer, augument
+from app.body.verify_jwt import verify_token, augument
 from app.models import (
     dev_n,
     MarketResponse,
@@ -27,7 +27,7 @@ logging.basicConfig(
 
 
 @router.get("/Security")
-def secure(payload: dict = Depends(verify_developer)):
+async def secure(payload: dict = Depends(verify_token)):
     return {"welcome": "Developer, you are verified"}
 
 
@@ -36,11 +36,11 @@ def secure(payload: dict = Depends(verify_developer)):
     response_model=StandardResponse[PaginatedMetadata[MarketResponse]],
     response_model_exclude_none=True,
 )
-def get_all(
+async def get_all(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
     offset = (page - 1) * limit
     total = db.query(Market).count()
@@ -57,14 +57,14 @@ def get_all(
     response_model=StandardResponse[PaginatedMetadata[MarketResponse]],
     response_model_exclude_none=True,
 )
-def locator(
+async def locator(
     page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
     trade: str | None = None,
     union: str | None = None,
     taxes: str | None = None,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
     offset = (page - 1) * limit
     total = db.query(Market).count()
@@ -83,20 +83,25 @@ def locator(
     return StandardResponse(status="success", message="requested data", data=data)
 
 
-@router.get("/fetch required_market_sections")
-def getting_some(
-    section: str,
+@router.get(
+    "/retrieve_specific_sections/{markets_id}",
+    response_model=StandardResponse[MarketResponse],
+    response_model_exclude_none=True,
+)
+async def fetch_some(
+    market_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
-    Mark = db.query(Market).filter(Market.section == section).first()
-    if not Mark:
-        return {"message": "section not found"}
-    return Mark
+    result = db.query(Market).filter(Market.id == market_id).first()
+    if not result:
+        return StandardResponse(status="failure", message="invalid id")
+    data = MarketResponse.model_validate(result)
+    return StandardResponse(status="success", message="requested data", data=data)
 
 
 @router.post("/market_section")
-def dev(
+async def dev(
     section: int,
     trade: str,
     traders: int,
@@ -104,7 +109,7 @@ def dev(
     taxes: str,
     data: dev_n = Depends(augument),
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
     mark = Market(
         section=section,
@@ -128,7 +133,7 @@ def dev(
 
 
 @router.put("/update", response_model=StandardResponse)
-def change(
+async def change(
     section: str,
     trade: str | None = None,
     traders: str | None = None,
@@ -136,7 +141,7 @@ def change(
     taxes: str | None = None,
     union: str | None = None,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
     data = db.query(Market).filter(Market.section == section).first()
     if not data:
@@ -173,7 +178,7 @@ def change(
 
 
 @router.delete("/clear_all")
-def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_developer)):
+async def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_token)):
     data = db.query(Market).all()
     if not data:
         return {f"no {data} to clear"}
@@ -184,14 +189,14 @@ def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_develope
 
 
 @router.delete("/erase", response_model=StandardResponse)
-def delete_one(
+async def delete_one(
     section: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_developer),
+    payload: dict = Depends(verify_token),
 ):
     data = db.query(Market).filter(Market.section == section).first()
     if not data:
-        return {"message": "invalid task id"}
+        return {"status": "no data", "message": "invalid field"}
     logging.info("deleted tasks %s", section)
     db.delete(data)
     db.commit()

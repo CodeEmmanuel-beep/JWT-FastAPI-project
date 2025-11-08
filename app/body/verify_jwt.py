@@ -2,7 +2,10 @@ from datetime import datetime, timezone
 from fastapi import Security, status, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
-from app.models import Description, Post, CalculateResponse, secret, dev, dev_n
+from app.models import (
+    dev,
+    dev_n,
+)
 from dotenv import load_dotenv
 import os
 
@@ -18,45 +21,6 @@ if not ALGORITHM:
 security_scheme = HTTPBearer()
 
 
-def verify_mathematician(
-    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-):
-    try:
-        payload = jwt.decode(
-            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
-        )
-        if payload.get("route") != "calculations":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="you are not a mathematician",
-            )
-        return payload
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="you are not a mathematician",
-        )
-
-
-def verify_developer(
-    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-):
-    try:
-        payload = jwt.decode(
-            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
-        )
-        if payload.get("route") != "markets":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="you are not a developer",
-            )
-        return payload
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="you are not a developer"
-        )
-
-
 def verify_token(
     credentials: HTTPAuthorizationCredentials = Security(security_scheme),
 ):
@@ -69,7 +33,7 @@ def verify_token(
         payload = jwt.decode(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
-        if payload.get("nationality") is None:
+        if payload.get("sub") is None:
             raise credentials_exception
         exp = payload.get("exp")
         if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(
@@ -81,45 +45,26 @@ def verify_token(
         raise credentials_exception
 
 
-def enrich_input(
-    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-    body: Description = Depends(),
-) -> Post:
-    token = credentials.credentials
+def decode_token(token: str):
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="could not validate"
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="not authenticated",
+        headers={"WWW-authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return Post(
-            description=body.description,
-            name=payload.get("sub"),
-            route=payload.get("route"),
-            nationality=payload.get("nationality"),
-        )
+        if payload.get("sub") is None:
+            raise credentials_exception
+        exp = payload.get("exp")
+        if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(
+            timezone.utc
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="expired token"
+            )
+        return payload
     except JWTError:
-        return credentials_exception
-
-
-def add_post(
-    credentials: HTTPAuthorizationCredentials = Security(security_scheme),
-    data: secret = Depends(),
-) -> CalculateResponse:
-    try:
-        payload = jwt.decode(
-            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
-        )
-        return CalculateResponse(
-            numbers=data.numbers,
-            operation=data.operation,
-            result=data.result,
-            route=payload.get("route"),
-            mathematician=payload.get("sub"),
-        )
-    except JWTError:
-        return HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="could not validate"
-        )
+        raise credentials_exception
 
 
 def augument(
@@ -131,9 +76,10 @@ def augument(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
         return dev_n(
-            route=payload.get("route"),
             union=data.union,
-            developer_name=payload.get("sub"),
+            username=payload.get("sub"),
+            name=payload.get("name"),
+            nationality=payload.get("nationality"),
         )
     except JWTError:
         return HTTPException(
