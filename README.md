@@ -8,23 +8,24 @@ A full-featured backend API built with **FastAPI** and **SQLAlchemy**, implement
 
 - **User Authentication (JWT + Argon2)**
 - **Role-based Access**
-  - `User` → Task routes  
-  - `Developer` → Market routes  
-  - `Mathematician` → Calculation routes
 - **Secure Token Validation**
 - **Full CRUD Support** (Create, Read, Update, Delete)
-- **Centralized Logging System**
+- **Dynamic Logging System**
 - **Environment-based Secret Key Management**
 - **Optimized SQLAlchemy Integration**
 - **Pagination, StandardResponse and DynamicResponse**
+- **Automation** some features are automated using redis and celery
+- **User Profile** an endpoint dedicated for users to view their activities
+- **Smart endpoints** State of the art endpoin which can carry out functions like blog, comment, react, smart task enpoint that goes beyound CRUD, it also indicates when you have missed a deadline and sends you an email powered by sendgrid to notify you also when you have done the task a notification email is sent to you as well. The endpoints across this FastAPI are state of the art.
 
 ---
 
 ## Tech Stack
 
 - **Backend Framework:** FastAPI  
-- **Database:** SQLite + SQLAlchemy ORM  
-- **Authentication:** JWT (Python-Jose) + Argon2 (Passlib)  
+- **Database:** SQLite + PostgreSQL + SQLAlchemy ORM  
+- **Authentication:** JWT (Python-Jose) + Argon2 (Passlib)
+- **Automation:** Celery + Redis  
 - **Data Validation:** Pydantic  
 - **Environment Management:** Python-dotenv  
 
@@ -48,21 +49,10 @@ Access the documentation at:
 
  Authentication
 
-Task Route Requires standard user registration with:
-
-username
-
-password (hashed with Argon2)
-
-nationality
-
-Market Route Restricted to developers. Access granted only via a unique developer code, securely hashed with Argon2 — no password required.
-
-Calculations Route Reserved for mathematicians. Requires a unique mathematician secret, also hashed with Argon2 for secure validation.
 
 All credentials are validated through JWT tokens and securely stored using Argon2 hashing, ensuring robust protection across all access levels.
 
-Register and login through the relevant endpoints (/Auth, /Market Authentification, /Mathematician Auth).
+Register and login through the desired endpoints 
 
 Copy the returned token.
 
