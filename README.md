@@ -73,5 +73,7 @@ This project delivers a production‑ready backend system with secure authentica
 
 
 **Author**
+
 Emmanuel Eke
+
 Backend Developer | FastAPI | SQLAlchemy | JWT | Python
