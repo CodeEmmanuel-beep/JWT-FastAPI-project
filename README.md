@@ -1,18 +1,14 @@
 # JWT FastAPI Project
 
-A full‑featured backend API built with FastAPI and SQLAlchemy, implementing secure JWT authentication and database‑driven CRUD operations across multiple domains. The project demonstrates production‑ready practices including background task automation, email notifications, and cloud deployment.
+A full‑featured backend API built with FastAPI and SQLAlchemy, implementing secure JWT authentication and database‑driven CRUD operations across multiple domains. The project demonstrates production‑ready practices and cloud deployment.
 
 # Features
 
 User Authentication: JWT tokens with Argon2 password hashing for secure login and session management
 
-Role‑Based Access Control: Fine‑grained permissions for different user roles
-
 Secure Token Validation: Robust token verification across all endpoints
 
 CRUD Operations: Full Create, Read, Update, Delete support for multiple entities
-
-Dynamic Logging System: Centralized logging for monitoring and debugging
 
 Environment‑Based Secret Management: Secure handling of keys and secrets via environment variables
 
@@ -20,13 +16,6 @@ Optimized SQLAlchemy Integration: Efficient ORM usage with PostgreSQL and SQLite
 
 Pagination and Standardized Responses: Consistent API responses with pagination support
 
-Automation: Background tasks powered by Celery and Redis
-
-User Profile Endpoint: Dedicated route for users to view their activities and history
-
-Smart Endpoints: Advanced endpoints for blogs, comments, reactions, and tasks.
-
-Task endpoints go beyond CRUD: they track deadlines, send notification emails via SendGrid when tasks are overdue, and confirm completion with automated email alerts.
 
 # Tech Stack
 
@@ -36,13 +25,9 @@ Task endpoints go beyond CRUD: they track deadlines, send notification emails vi
 
 **Authentication**: JWT (Python‑Jose) + Argon2 (Passlib)
 
-**Automation**: Celery + Redis
-
 **Data Validation**: Pydantic
 
 **Environment Management**: Python‑dotenv
-
-**Email Delivery**: SendGrid
 
 # Setup and Installation
 
@@ -63,7 +48,7 @@ Register and log in through the provided endpoints.
 Copy the returned JWT token.
 In Swagger UI, click Authorize and paste the token.
 
-Access secured routes with full authentication and role‑based permissions.
+Access secured routes with full authentication.
 
 All credentials are validated through JWT tokens and securely stored using Argon2 hashing, ensuring strong protection across all access levels.
 
