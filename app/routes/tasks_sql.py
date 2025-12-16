@@ -1,393 +1,165 @@
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 from app.models_sql import Task
 from fastapi import APIRouter
-from fastapi.encoders import jsonable_encoder
-from sqlalchemy import func, select, delete
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from app.body.dependencies.db_session import get_db
 from fastapi import HTTPException, Depends, Query
-from app.body.verify_jwt import verify_token
-from app.models import (
-    TaskResponse,
-    PaginatedResponse,
-    StandardResponse,
-    PaginatedMetadata,
-)
-from typing import List
-from app.log.logger import get_loggers
+import logging
+from pathlib import Path
+from app.body.verify_jwt import verify_token, enrich_input
+from app.models import Post
 
-router = APIRouter(prefix="/Tasks", tags=["Routine"])
-logger = get_loggers("tasks")
+router = APIRouter(prefix="/tasks", tags=["Routines"])
+LOGFILE = Path("tasks.log")
+LOGFILE.parent.mkdir(parents=True, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    filename=LOGFILE,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 
 
 @router.get("/secure_zone")
-async def secure(username: str = Depends(verify_token)):
+def secure(username: str = Depends(verify_token)):
     return {"message": f"welcome {username}, you are verified"}
 
 
 @router.post("/create")
-async def create_tasks(
-    days_to_execution: int,
-    description: str,
+def create_tasks(
+    data: Post = Depends(enrich_input),
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    username: str = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(
-            status_code=403, detail="Username mismatch. Unauthorized task creation."
-        )
-    day_of_execution = datetime.now(timezone.utc) + timedelta(days=days_to_execution)
     new_task = Task(
-        user_id=user_id,
-        description=description,
-        days_to_execution=days_to_execution,
-        day_of_execution=day_of_execution,
-        time_of_implementation=datetime.now(timezone.utc),
+        description=data.description,
+        username=data.name,
+        nationality=data.nationality,
+        time_of_execution=datetime.now(timezone.utc),
     )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
-    logger.info(f"task successfully created by {username}. task: {description}")
     return {"task saved": new_task.description}
 
 
-@router.put("/update", response_model=StandardResponse)
-async def update_task(
+@router.put("/update/{task_id}")
+def update_task(
     task_id: int,
-    new_days_to_execution: int | None = None,
-    new_description: str | None = None,
+    new_description: str,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    username: str = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(
-            status_code=403, detail="Username mismatch. Unauthorized task creation."
-        )
-    stmt = select(Task).where(Task.user_id == user_id, Task.id == task_id)
-    data = db.execute(stmt).scalar_one_or_none()
+    data = db.query(Task).filter(Task.id == task_id).first()
     if not data:
-        logger.warning(f"{username}, tried updating a nonexistent task")
         raise HTTPException(status_code=409, detail="task not found")
-    if new_days_to_execution is not None:
-        data.days_to_execution = new_days_to_execution
-        data.day_of_execution = datetime.now(timezone.utc) + timedelta(
-            days=new_days_to_execution
-        )
-        data.time_of_implementation = datetime.now()
-    if new_description is not None:
-        data.description = new_description
-        data.time_of_implementation = datetime.now(timezone.utc)
+    data.description = new_description
+    data.time_of_execution = datetime.now()
     db.commit()
     db.refresh(data)
-    logger.info(f"task successfully updated from by {username}")
-    return StandardResponse(
-        status="success",
-        message="Task updated successfully",
-        data={
-            "new deadline": new_days_to_execution,
-            "new_description": new_description,
-            "time of update": datetime.now(timezone.utc),
-        },
-    )
+    return {"message": f"Task {task_id} updated successfully"}
 
 
-@router.get(
-    "/list_tasks",
-    response_model=StandardResponse[PaginatedMetadata[TaskResponse]],
-    response_model_exclude_none=True,
-)
-async def view_all_tasks(
+@router.get("/retrieve_all")
+def get_all_tasks(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
-    payload: dict = Depends(verify_token),
+    username: dict = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    logger.info(
-        f"Fetching tasks for user_id={user_id}, username={username}, page={page}, limit={limit}"
-    )
     offset = (page - 1) * limit
-    stmt = select(Task).where(Task.user_id == user_id)
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    tasks = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
+    tasks = db.query(Task).offset(offset).limit(limit).all()
+    total = db.query(Task).count()
     if not tasks:
-        logger.warning(f"all tasks queried, but none found for {username}")
-        return StandardResponse(status="success", message="No tasks found")
-    data = PaginatedMetadata[TaskResponse](
-        items=[TaskResponse.model_validate(task) for task in tasks],
-        pagination=PaginatedResponse(page=page, limit=limit, total=total),
-    )
-    logger.info(
-        f"all tasks fetched successfully by {username}, page={page}, limit={limit}, total={total}"
-    )
-    return StandardResponse(status="success", message="tasks data", data=data)
+        return "no file stored"
+    return {"total": total, "page": page, "limit": limit, "tasks": tasks}
 
 
-@router.get(
-    "/search",
-    response_model=StandardResponse[PaginatedMetadata[TaskResponse]],
-    response_model_exclude_none=True,
-)
-async def search_tasks(
-    description: str,
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, le=100),
-    db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
-):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    offset = (page - 1) * limit
-    stmt = select(Task).where(Task.user_id == user_id)
-    stmt = stmt.where(Task.description.ilike(f"%{description}%"))
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    results = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    data = PaginatedMetadata[TaskResponse](
-        items=[TaskResponse.model_validate(item) for item in results],
-        pagination=PaginatedResponse(page=page, limit=limit, total=total),
-    )
-    logger.info(f"{username} did a global search for tasks")
-    return StandardResponse(status="success", message="requested task data", data=data)
+@router.get("/search")
+def filtering(description: str | None = None, db: Session = Depends(get_db)):
+    desc = db.query(Task)
+    if description:
+        desc = desc.filter(Task.description.ilike(f"%{description}%"))
+    results = desc.all()
+    if results:
+        logging.info("search successful")
+        return {"results": results}
+    return {"message": "such tasks does not exist"}
 
 
-@router.get(
-    "/retrieve_specific_tasks/{tasks_id}",
-    response_model=StandardResponse[TaskResponse],
-    response_model_exclude_none=True,
-)
-async def fetch_some(
+@router.get("/retrieve_some/{task_id}")
+def fetch_some(
     task_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    username: str = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = select(Task).where(Task.user_id == user_id, Task.id == task_id)
-    result = db.execute(stmt).scalar_one_or_none()
-    if not result:
-        logger.warning(f"{username} unsuccessfully queried task with id {task_id}")
-        return StandardResponse(
-            status="failure", message="Task not found or access denied"
-        )
-    data = TaskResponse.model_validate(result)
-
-    logger.info(f"{username}, fetched for task with id {task_id}")
-    return StandardResponse(status="success", message="requested data", data=data)
+    data = db.query(Task).filter(Task.id == task_id).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="task not found")
+    logging.info("retrieved task %s", task_id)
+    return {"this is your requested file": data}
 
 
-@router.get("/mark_complete", response_model=StandardResponse)
-async def completed(
+@router.get("/mark_complete{task_id}")
+def completed(
     task_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    username: str = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = select(Task).where(Task.user_id == user_id, Task.id == task_id)
-    tasks = db.execute(stmt).scalar_one_or_none()
-    if not tasks:
-        logger.warning(
-            f"{username}, tried marking an invalid id as complete, id attempted, {task_id}"
-        )
-        return StandardResponse(
-            status="failure", message="Task not found or access denied"
-        )
-    tasks.complete = True
-    logger.info(
-        f"{username} successfully marked task with task id '{task_id}' as complete"
-    )
-    try:
+    tasks = db.query(Task).filter(Task.id == task_id).first()
+    if tasks:
+        tasks.complete = True
         db.commit()
-    except IntegrityError:
-        logger.info(f"Integrity error by {username}")
-        db.rollback()
-        return StandardResponse(
-            status="failure", message="Duplicate entry or constraint violation"
-        )
-    db.refresh(tasks)
-    return {
-        "status": "success",
-        "message": "completed task",
-        "data": {
-            "id": tasks.id,
-            "username": username,
-            "description": tasks.description,
-            "completed": "Yes",
-        },
-    }
+        db.refresh(tasks)
+        logging.info("marked task as complete %s", task_id)
+        return {"message": f"{task_id } completed"}
+    return "invalid id"
 
 
-@router.get(
-    "/completed_tasks",
-    response_model=StandardResponse[PaginatedMetadata[TaskResponse]],
-    response_model_exclude_none=True,
-)
-async def completed_data(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, le=100),
-    db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+@router.get("/completed_tasks")
+def completed_data(
+    db: Session = Depends(get_db), username: str = Depends(verify_token)
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    offset = (page - 1) * limit
-    stmt = select(Task).where(Task.user_id == user_id, Task.complete.is_(True))
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    data = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    logger.info(f"{username} successfully queried completed tasks")
-    check = PaginatedMetadata[TaskResponse](
-        items=[TaskResponse.model_validate(task) for task in data],
-        pagination=PaginatedResponse(
-            page=page,
-            limit=limit,
-            total=total,
-        ),
-    )
-    return StandardResponse(
-        status="success",
-        message="task executed",
-        data=check,
-    )
+    data = db.query(Task).filter(Task.complete == True).all()
+    if data:
+        logging.info("queried completed tasks")
+        return {"you have completed these tasks": data, "total completed": len(data)}
+    return {"message": "no tasks completed"}
 
 
-@router.get(
-    "/undone_tasks",
-    response_model=StandardResponse[PaginatedMetadata[TaskResponse]],
-    response_model_exclude_none=True,
-)
-async def not_complete(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, le=100),
-    db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
-):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    offset = (page - 1) * limit
-    stmt = select(Task).where(Task.user_id == user_id, Task.complete.is_(False))
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    data = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    logger.info(f"{username} successfully queried uncompleted tasks")
-    check = PaginatedMetadata[TaskResponse](
-        items=[TaskResponse.model_validate(task) for task in data],
-        pagination=PaginatedResponse(
-            page=page,
-            limit=limit,
-            total=total,
-        ),
-    )
-    return StandardResponse(
-        status="success",
-        message="task executed",
-        data=check,
-    )
+@router.get("/undone_tasks")
+def not_complete(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    data = db.query(Task).filter(Task.complete == False).all()
+    if data:
+        logging.info("queried undone tasks")
+        return {
+            "you have not completed these tasks": data,
+            "total completed": len(data),
+        }
+    return {"message": "all task data found"}
 
 
-@router.get(
-    "/expired_deadline",
-    response_model=StandardResponse[PaginatedMetadata[TaskResponse]],
-    response_model_exclude_none=True,
-)
-async def expired_deadline(
-    db: Session = Depends(get_db),
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, le=100),
-    payload: dict = Depends(verify_token),
-):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    offset = (page - 1) * limit
-    now = datetime.now(timezone.utc)
-    stmt = select(Task).where(
-        Task.user_id == user_id,
-        Task.day_of_execution <= now,
-        Task.complete.is_(False),
-    )
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    data = (
-        db.execute(
-            stmt.order_by(Task.day_of_execution.asc()).offset(offset).limit(limit)
-        )
-        .scalars()
-        .all()
-    )
-    logger.info(f"{username} successfully queried expired tasks")
-    check = PaginatedMetadata[TaskResponse](
-        items=[TaskResponse.model_validate(task) for task in data],
-        pagination=PaginatedResponse(
-            page=page,
-            limit=limit,
-            total=total,
-        ),
-    )
-    return StandardResponse(status="success", message="task executed", data=check)
-
-
-@router.delete("/clear all")
-async def delete_all(
-    db: Session = Depends(get_db), payload: dict = Depends(verify_token)
-):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = delete(Task).where(Task.user_id == user_id)
-    data = db.execute(stmt)
-    if data.rowcount == 0:
-        logger.warning(f"{username}, tried deleting a blank database")
-        return {"no data to clear"}
+@router.delete("/clear_all")
+def clear(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    data = db.query(Task).all()
+    if not data:
+        return {f"no {data} to clear"}
+    for item in data:
+        db.delete(item)
     db.commit()
-    logger.info(f"{username} successfully wiped their database")
+    logging.info("deleted tasks")
     return {"message": "data wiped"}
 
 
-@router.delete("/erase", response_model=StandardResponse)
-async def delete_one(
+@router.delete("/erase/{task_id}")
+def delete_one(
     task_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    username: str = Depends(verify_token),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = select(Task).where(Task.user_id == user_id, Task.id == task_id)
-    data = db.execute(stmt).scalar_one_or_none()
+    data = db.query(Task).filter(Task.id == task_id).first()
     if not data:
-        logger.warning(
-            f"{username}, tried deleting a nonexistent task, task id: {task_id}"
-        )
-        return {"status": "no data", "message": "invalid field"}
-    logger.info("deleted tasks %s", task_id)
+        raise HTTPException(status_code=404, detail="task not found")
+    logging.info("deleted tasks %s", task_id)
     db.delete(data)
     db.commit()
-    return {
-        "status": "success",
-        "message": "deleted task",
-        "data": {
-            "id": data.id,
-            "username": username,
-            "description": data.description,
-            "deleted": "Yes",
-        },
-    }
+    return {"message": f"{task_id} deleted"}

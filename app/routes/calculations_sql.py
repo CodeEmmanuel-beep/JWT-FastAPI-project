@@ -1,3 +1,4 @@
+import math
 import operator
 from functools import reduce
 from sqlalchemy.orm import Session
@@ -7,270 +8,199 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pathlib import Path
-from app.body.verify_jwt import verify_token
-from app.models import (
-    PaginatedResponse,
-    CalculateRes,
-    StandardResponse,
-    PaginatedMetadata,
+from app.body.verify_jwt import verify_mathematician, add_post
+from app.models import secret, CalculateResponse, PaginatedResponse
+from typing import List
+
+router = APIRouter(prefix="/Cal_Sql", tags=["Mathematics"])
+LOGFILE = Path("calculations.log")
+LOGFILE.parent.mkdir(parents=True, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    filename=LOGFILE,
+    format="%(asctime)s %(levelname)s %(message)s",
 )
-from app.log.logger import get_loggers
-from sqlalchemy import select, func, delete
-
-router = APIRouter(prefix="/maths", tags=["Calculations"])
-logger = get_loggers("calculations")
 
 
-@router.get("/security zone")
-async def secure(payload: dict = Depends(verify_token)):
-    return {"message": "Welcome, mathematician"}
+@router.get("/security_zone")
+def secure(payload: dict = Depends(verify_mathematician)):
+    return {"Welcome, mathematician"}
 
 
 @router.post("/calculate")
-async def calculator(
-    numbers: str,
-    operation: str,
-    result: float | None = None,
+def mathing(
+    data: CalculateResponse = Depends(add_post),
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="unauthorizes accesss")
     calc = Calculate(
-        user_id=user_id,
-        numbers=numbers,
-        operation=operation,
-        result=result,
+        numbers=data.numbers,
+        operation=data.operation,
+        mathematician=data.mathematician,
+        result=data.result,
         time_of_calculation=datetime.now(timezone.utc),
     )
 
-    num = [float(n.strip()) for n in numbers.split(",")]
+    numbers_list = [float(num.strip()) for num in calc.numbers.split(",")]
 
-    if operation == "add":
-        result = sum(num)
+    if calc.operation == "add":
+        result = sum(numbers_list)
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        logger.info(f"Addition result: {result}")
-        return {
-            "message": "Calculation done successfully",
-            "data": result,
-        }
+        return {"message": "Calculation done successfully", "data": result}
     elif calc.operation == "minus":
-        result = reduce(lambda x, y: x - y, num)
+        result = reduce(lambda x, y: x - y, numbers_list)
         logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        logger.info(f"Subtraction result: {result}")
         return {"message": "Calculation done successfully", "data": result}
     elif calc.operation == "times":
-        result = reduce(operator.mul, num)
+        result = reduce(operator.mul, numbers_list)
         logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        logger.info(f"Multiplication result: {result}")
         return {
             "message": "Calculation done successfully",
             "data": result,
         }
     elif calc.operation == "divide":
         try:
-            result = reduce(operator.truediv, num)
+            result = reduce(operator.truediv, numbers_list)
         except ZeroDivisionError:
-            logger.error("Division by zero encountered.")
             raise HTTPException(status_code=400, detail="Cannot divide by zero")
+        logging.info(f"calculation done {calc.operation}, result{result} ")
         calc.result = result
         db.add(calc)
         db.commit()
         db.refresh(calc)
-        logger.info(f"Division result: {result}")
+        return {
+            "message": "Calculation done successfully",
+            "data": result,
+        }
+    elif calc.operation == "sqrt":
+        result = math.sqrt(numbers_list[0])
+        logging.info(f"calculation done {calc.operation}, result{result} ")
+        calc.result = result
+        db.add(calc)
+        db.commit()
+        db.refresh(calc)
         return {
             "message": "Calculation done successfully",
             "data": result,
         }
     else:
-        logger.warning(f"Unsupported operation requested: {calc.operation}")
-        return {"message": "Invalid operation"}
+        raise HTTPException(status_code=400, detail="unsupported operation")
 
 
 @router.get(
-    "/view_all",
-    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
+    "/retrieve_all_datas",
+    response_model=PaginatedResponse[CalculateResponse],
     response_model_exclude_none=True,
 )
-async def get_all_calculations(
+def get_all(
     db: Session = Depends(get_db),
     page: int = (Query(1, ge=1)),
     limit: int = (Query(10, le=100)),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
     offset = (page - 1) * limit
-    stmt = select(Calculate).where(Calculate.user_id == user_id)
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    logger.info(f"Ttal calculations found for {username}: {total}")
-    result = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    logger.info(f"Fetched {len(result)} calculation records for page {page}")
-    data = PaginatedMetadata[CalculateRes](
-        items=[CalculateRes.model_validate(t) for t in result],
-        pagination=PaginatedResponse(page=page, limit=limit, total=total),
-    )
-    logger.info(f"Successfully fetched calculations for mathematician: {username}")
-    return StandardResponse(
-        status="success", message="fetched tasks successfully", data=data
-    )
+    total = db.query(Calculate).count()
+    query = db.query(Calculate)
+    result = query.offset(offset).limit(limit).all()
+    data = [
+        CalculateResponse.model_validate(
+            {
+                "mathematician": item.mathematician,
+                "numbers": item.numbers,
+                "operation": item.operation,
+                "result": item.result,
+            }
+        )
+        for item in result
+    ]
+    return PaginatedResponse(total=total, page=page, limit=limit, data=data)
 
 
-@router.get(
-    "/filter",
-    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
-    response_model_exclude_none=True,
-)
-async def search_calculations(
+@router.get("/filter")
+def search(
     operation: str,
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    offset = (page - 1) * limit
-    stmt = select(Calculate).where(Calculate.user_id == user_id)
-    stmt = stmt.where(Calculate.operation.ilike(f"%{operation}%"))
-    logger.info(f"Applied operation filter: {operation}")
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    logger.info(f"Total calculations found: {total}")
-    result = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    logger.info(f"Fetched {len(result)} calculations for page {page}")
-    data = PaginatedMetadata[CalculateRes](
-        items=[CalculateRes.model_validate(t) for t in result],
-        pagination=PaginatedResponse(page=page, limit=limit, total=total),
-    )
-
-    logger.info(f"Search completed successfully for: {username}")
-    return StandardResponse(status="success", message="requested data", data=data)
+    query = db.query(Calculate)
+    if operation:
+        query = query.filter(Calculate.operation.ilike(f"%{operation}%"))
+    result = query.all()
+    if not result:
+        return {"message": "sorry, no data"}
+    return {"result": result}
 
 
-@router.get(
-    "/retrieve_specific_calculations/{calcs_id}",
-    response_model=StandardResponse[CalculateRes],
-    response_model_exclude_none=True,
-)
-async def fetch_some(
+@router.get("/retrieve_some/{calc_id}")
+def fetch_some(
     calc_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = select(Calculate).where(
-        Calculate.user_id == user_id, Calculate.id == calc_id
-    )
-    result = db.execute(stmt).scalar_one_or_none()
-    if not result:
-        logger.warning(
-            f"No calculation found with id {calc_id} for mathematician {username}"
-        )
-        return StandardResponse(status="failure", message="invalid id")
-    data = CalculateRes.model_validate(result)
-    logger.info(
-        f"Successfully retrieved calculation with id {calc_id} for mathematician {username}"
-    )
-    return StandardResponse(status="success", message="requested data", data=data)
+    data = db.query(Calculate).filter(Calculate.id == calc_id).first()
+    if not data:
+        return {"message": "invalid id"}
+    return data
 
 
-@router.get(
-    "/recent Calculations",
-    response_model=StandardResponse[PaginatedMetadata[CalculateRes]],
-    response_model_exclude_none=True,
-)
-async def recent_calculations(
+@router.get("/recent_Calculations")
+def recent_calculations(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
     offset = (page - 1) * limit
-    stmt = select(Calculate).where(Calculate.user_id == user_id)
-    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar()
-    logger.info(f"Total calculations available for {username}: {total}")
-    stmt = stmt.order_by(Calculate.time_of_calculation.desc())
-    data = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    logger.info(f"Fetched {len(data)} recent calculation records for page {page}")
-    mark = PaginatedMetadata[CalculateRes](
-        items=[CalculateRes.model_validate(it) for it in data],
-        pagination=PaginatedResponse(page=page, limit=limit, total=total),
-    )
-    logger.info(
-        f"Successfully fetched recent calculations for mathematician: {username}"
-    )
-    return StandardResponse(
-        status="success", message="most recent calculations fetched properly", data=mark
-    )
+    total = db.query(Calculate).count()
+    data = db.query(Calculate).offset(offset).limit(limit).all()
+    if data:
+        sorted_calcs = sorted(
+            data,
+            key=lambda x: x.time_of_calculation,
+            reverse=True,
+        )
+        return {
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "most recent calculation": sorted_calcs,
+        }
+    else:
+        return {"message": "no calculations found for this user"}
 
 
-@router.delete("/clear all")
-async def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_token)):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = delete(Calculate).where(Calculate.user_id == user_id)
-    data = db.execute(stmt)
-    if data.rowcount == 0:
-        logger.warning(f"No calculations found to delete for mathematician: {username}")
-        return {"message": "no available data"}
+@router.delete("/clear_all")
+def clear(db: Session = Depends(get_db), payload: dict = Depends(verify_mathematician)):
+    data = db.query(Calculate).all()
+    if not data:
+        return {"message:": "no available data"}
+    for item in data:
+        db.delete(item)
     db.commit()
-    logger.info(f"All calculations successfully deleted for mathematician: {username}")
     return {"message": "data wiped"}
 
 
-@router.delete("/erase", response_model=StandardResponse)
-async def delete_one(
+@router.delete("/erase/{calc_id}")
+def delete_one(
     calc_id: int,
     db: Session = Depends(get_db),
-    payload: dict = Depends(verify_token),
+    payload: dict = Depends(verify_mathematician),
 ):
-    user_id = payload.get("user_id")
-    username = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-    stmt = select(Calculate).where(
-        Calculate.user_id == user_id, Calculate.id == calc_id
-    )
-    data = db.execute(stmt).scalar_one_or_none()
+    data = db.query(Calculate).filter(Calculate.id == calc_id).first()
     if not data:
-        logger.warning(
-            f"No calculation found with id {calc_id} for mathematician {user_id}"
-        )
-        return {"status": "no data", "message": "invalid field"}
+        return {"message:": "invalid task id"}
+    logging.info("deleted tasks %s", calc_id)
     db.delete(data)
     db.commit()
-    logger.info(f"Successfully deleted calculation id {calc_id}")
-    return {
-        "status": "success",
-        "message": "section successfully deleted",
-        "data": {
-            "id": data.id,
-            "operation": data.operation,
-            "mathematician": username,
-        },
-    }
+    return {"message": f"{calc_id} deleted"}
