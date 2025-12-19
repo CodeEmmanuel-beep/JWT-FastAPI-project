@@ -1,5 +1,9 @@
 # JWT FastAPI project
 
+## Live API 
+
+You can test the live API here: https://jwt-fastapi-project.onrender.com/docs
+
 A full-featured backend API built with **FastAPI** and **SQLAlchemy**, implementing secure **JWT authentication**, and **database-driven CRUD operations** across multiple domains.
 
 ---
