@@ -1,64 +1,77 @@
-# JWT FastAPI Project
+# JWT FastAPI project
 
-A full‑featured backend API built with FastAPI and SQLAlchemy, implementing secure JWT authentication and database‑driven CRUD operations across multiple domains. The project demonstrates production‑ready practices and cloud deployment.
+A full-featured backend API built with **FastAPI** and **SQLAlchemy**, implementing secure **JWT authentication**, and **database-driven CRUD operations** across multiple domains.
 
-# Features
+---
 
-User Authentication: JWT tokens with Argon2 password hashing for secure login and session management
+## Features
 
-Secure Token Validation: Robust token verification across all endpoints
+- **User Authentication (JWT + Argon2)**
+- **Role-based Access**
+  - `User` → Task routes
+  - `Developer` → Market routes
+  - `Mathematician` → Calculation routes
+- **Secure Token Validation**
+- **Full CRUD Support** (Create, Read, Update, Delete)
+- **Centralized Logging System**
+- **Environment-based Secret Key Management**
+- **Optimized SQLAlchemy Integration**
+- **Pagination, StandardResponse and DynamicResponse**
 
-CRUD Operations: Full Create, Read, Update, Delete support for multiple entities
+---
 
-Environment‑Based Secret Management: Secure handling of keys and secrets via environment variables
+## Tech Stack
 
-Optimized SQLAlchemy Integration: Efficient ORM usage with PostgreSQL and SQLite support
+- **Backend Framework:** FastAPI
+- **Database:** SQLite + SQLAlchemy ORM
+- **Authentication:** JWT (Python-Jose) + Argon2 (Passlib)
+- **Data Validation:** Pydantic
+- **Environment Management:** Python-dotenv
 
-Pagination and Standardized Responses: Consistent API responses with pagination support
+---
 
+# Setup & Installation
 
-# Tech Stack
+```bash
+# Clone the repository
+git clone https://github.com/emmanueleke/finishing-fastapi.git
+cd finishing-fastapi
 
-**Backend Framework**: FastAPI
-
-**Database**: PostgreSQL + SQLite with SQLAlchemy ORM
-
-**Authentication**: JWT (Python‑Jose) + Argon2 (Passlib)
-
-**Data Validation**: Pydantic
-
-**Environment Management**: Python‑dotenv
-
-# Setup and Installation
-
- **Clone the repository**
-git clone https://github.com/CodeEmmanuel-beep/JWT-FastAPI-project.git
-cd JWT-FastAPI-project
-
- **Install dependencies**
+# Install dependencies
 pip install -r requirements.txt
- 
- **Run the API**
-uvicorn body.main:app --reload
 
-# Authentication Workflow
+# Run the API
+uvicorn app.main:app --reload
 
-Register and log in through the provided endpoints.
+Access the documentation at:
+ http://127.0.0.1:8000/docs
 
-Copy the returned JWT token.
-In Swagger UI, click Authorize and paste the token.
+ Authentication
 
-Access secured routes with full authentication.
+Task Route Requires standard user registration with:
 
-All credentials are validated through JWT tokens and securely stored using Argon2 hashing, ensuring strong protection across all access levels.
+username
 
-#  Project Outcome
+password (hashed with Argon2)
 
-This project delivers a production‑ready backend system with secure authentication, robust database integration, background task automation, and cloud deployment readiness. It demonstrates modern backend practices and can serve as a foundation for scalable applications.
+nationality
+
+Market Route Restricted to developers. Access granted only via a unique developer code, securely hashed with Argon2 — no password required.
+
+Calculations Route Reserved for mathematicians. Requires a unique mathematician secret, also hashed with Argon2 for secure validation.
+
+All credentials are validated through JWT tokens and securely stored using Argon2 hashing, ensuring robust protection across all access levels.
+
+Register and login through the relevant endpoints (/Auth, /Market Authentification, /Mathematician Auth).
+
+Copy the returned token.
+
+Click Authorize on the Swagger UI and paste the token.
+
+Access your secured routes.
 
 
-**Author**
-
+Author
 Emmanuel Eke
-
 Backend Developer | FastAPI | SQLAlchemy | JWT | Python
+```
